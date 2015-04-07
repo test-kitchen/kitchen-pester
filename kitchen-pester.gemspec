@@ -8,9 +8,9 @@ Gem::Specification.new do |spec|
   spec.version       = Kitchen::Verifier::PESTER_VERSION
   spec.authors       = ["Steven Murawski"]
   spec.email         = ["steven.murawski@gmail.com"]
-  spec.summary       = %q{TODO: Write a short summary. Required.}
-  spec.description   = %q{TODO: Write a longer description. Optional.}
-  spec.homepage      = ""
+  spec.summary       = 'Test-Kitchen verifier for Pester.'
+  spec.description   = 'Skip all that Busser stuff and jump right into Pester.'
+  spec.homepage      = "https://github.com/smurawski/kitchen-pester"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")

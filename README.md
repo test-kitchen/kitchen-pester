@@ -1,26 +1,25 @@
 # Kitchen::Pester
 
-TODO: Write a gem description
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-```ruby
-gem 'kitchen-pester'
-```
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install kitchen-pester
+Execute [Pester](https://github.com/pester/Pester) tests right from Test-Kitchen, without having to transit the Busser layer.
 
 ## Usage
 
-TODO: Write usage instructions here
+Either
+```
+gem install kitchen-pester
+```
+or include
+```
+gem 'kitchen-pester'
+```
+in your Gemfile.
+
+In your .kitchen.yml include
+```
+verifier:
+  name: pester
+```
+This can be a top-level declaration, a per-node declaration, or a per-suite declaration.
 
 ## Contributing
 
