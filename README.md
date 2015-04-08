@@ -1,3 +1,4 @@
+[![Gem Version](https://badge.fury.io/rb/kitchen-pester.svg)](http://badge.fury.io/rb/kitchen-pester)
 # Kitchen::Pester
 
 Execute [Pester](https://github.com/pester/Pester) tests right from Test-Kitchen, without having to transit the Busser layer.
