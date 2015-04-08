@@ -18,7 +18,6 @@
 
 require "kitchen/verifier/base"
 require 'kitchen/verifier/pester_version'
-require 'pry'
 
 module Kitchen
 
@@ -58,9 +57,7 @@ module Kitchen
       #   end
       def create_sandbox
         super
-        #binding.pry
         prepare_pester_tests
-        #stage test scripts
       end
 
       # Generates a command string which will install and configure the
