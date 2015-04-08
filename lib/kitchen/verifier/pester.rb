@@ -69,7 +69,6 @@ module Kitchen
         return if local_suite_files.empty?
 
         cmd = <<-CMD
-          cd #{File.join(config[:root_path],'suites/pester' )}
           if (-not (get-module -list pester)) {
             if (-not (get-module PsGet)){
               iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
