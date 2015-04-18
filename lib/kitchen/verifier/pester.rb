@@ -123,7 +123,7 @@ module Kitchen
 
       def local_suite_files
         base = File.join(config[:test_base_path], config[:suite_name])
-        glob = File.join(base, "pester/**/*")
+        glob = File.join(base, "*/**/*")
         Dir.glob(glob).reject do |f|
           File.directory?(f)
         end
