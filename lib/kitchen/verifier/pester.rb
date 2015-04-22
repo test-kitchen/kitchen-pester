@@ -107,10 +107,8 @@ module Kitchen
         return if local_suite_files.empty?
 
         wrap_shell_code(Util.outdent!(<<-CMD))
-          if (-not (test-path c:/tests)) {mkdir c:/tests}
-          mv "#{File.join(config[:root_path],'suites/pester/' )}" -Dest c:/tests/ -force
-          cd c:/tests
-          invoke-pester -EnableExit
+          cd "#{File.join(config[:root_path],'suites/pester/' )}"
+          invoke-pester
         CMD
       end
 
