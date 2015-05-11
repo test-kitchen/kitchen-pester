@@ -108,7 +108,7 @@ module Kitchen
 
         wrap_shell_code(Util.outdent!(<<-CMD))
           cd "#{File.join(config[:root_path],'suites/pester/' )}"
-          invoke-pester
+          invoke-pester -enableexit
         CMD
       end
 
