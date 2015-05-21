@@ -29,6 +29,8 @@ module Kitchen
 
       plugin_version Kitchen::Verifier::PESTER_VERSION
 
+      default_config :restart_winrm, false
+
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
       #
@@ -69,6 +71,7 @@ module Kitchen
         return if local_suite_files.empty?
 
         cmd = <<-CMD
+          set-executionpolicy unrestricted -force
           if (-not (get-module -list pester)) {
             if (-not (get-module PsGet)){
               iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
@@ -87,6 +90,7 @@ module Kitchen
       #
       # @return [String] a command string
       def init_command
+        restart_winrm_service if config[:restart_winrm]
       end
 
       # Generates a command string which will perform any commands or
@@ -105,15 +109,23 @@ module Kitchen
       # @return [String] a command string
       def run_command
         return if local_suite_files.empty?
-
-        wrap_shell_code(Util.outdent!(<<-CMD))
+        wrap_shell_code(Util.outdent!(<<-CMD
           cd "#{File.join(config[:root_path],'suites/pester/' )}"
           $global:ProgressPreference = 'SilentlyContinue'
-          invoke-pester -enableexit
+          import-module Pester -force; invoke-pester -enableexit
         CMD
+        ))
       end
 
       #private
+
+      def restart_winrm_service
+        wrap_shell_code(Util.outdent!(<<-CMD
+          schtasks /Create /TN restart_winrm /TR "powershell -command restart-service winrm" /SC ONCE /ST 00:00
+          schtasks /RUN /TN restart_winrm
+        CMD
+        ))
+      end
 
       # Returns an Array of test suite filenames for the related suite currently
       # residing on the local workstation. Any special provisioner-specific
