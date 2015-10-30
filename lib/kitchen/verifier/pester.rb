@@ -71,14 +71,36 @@ module Kitchen
         return if local_suite_files.empty?
 
         cmd = <<-CMD
-          set-executionpolicy unrestricted -force
-          if (-not (get-module -list pester)) {
-            if (-not (get-module PsGet)){
-              iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
+        set-executionpolicy unrestricted -force
+
+        function Get-Proxy() {
+            if (Test-Path Env:HTTP_PROXY) {
+                return $Env:HTTP_PROXY
             }
-            Import-Module PsGet
-            Install-Module Pester
-          }
+            ElseIf (Test-Path Env:HTTPS_PROXY) {
+                return $Env:HTTPS_PROXY
+            }
+        }
+
+        if (-not (get-module -list pester)) {
+        if (-not (get-module PsGet)){
+            $webclient = new-object Net.WebClient
+            if ((Test-Path Env:HTTP_PROXY) -Or (Test-Path Env:HTTPS_PROXY)) {
+              $proxy = Get-Proxy
+              Write-Host "Proxy detected"
+              Write-Host "Using proxy address $proxy"
+              $webproxy = new-object System.Net.WebProxy
+              $webproxy.Address = $proxy
+              $webclient.Proxy = $webproxy
+              $webclient.Proxy.Credentials = [System.Net.CredentialCache]::DefaultNetworkCredentials
+            }
+            $cmd = $webclient.DownloadString('http://bit.ly/GetPsGet')
+            iex $cmd
+        }
+        Import-Module PsGet
+        Install-Module Pester
+        }
+
         CMD
         wrap_shell_code(Util.outdent!(cmd))
       end
