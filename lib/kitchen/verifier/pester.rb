@@ -16,7 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "kitchen/verifier/base"
+require 'pathname'
+require 'kitchen/verifier/base'
 require 'kitchen/verifier/pester_version'
 
 module Kitchen
@@ -30,6 +31,7 @@ module Kitchen
       plugin_version Kitchen::Verifier::PESTER_VERSION
 
       default_config :restart_winrm, false
+      default_config :test_folder
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -73,11 +75,17 @@ module Kitchen
         cmd = <<-CMD
           set-executionpolicy unrestricted -force
           if (-not (get-module -list pester)) {
-            if (-not (get-module PsGet)){
-              iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
+            if (get-module -list PowerShellGet){
+              import-module PowerShellGet -force
+              install-module Pester -force
             }
-            Import-Module PsGet
-            Install-Module Pester
+            else {
+              if (-not (get-module -list PsGet)){
+                iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
+              }
+              import-module psget -force
+              Install-Module Pester
+            }
           }
         CMD
         wrap_shell_code(Util.outdent!(cmd))
@@ -110,9 +118,9 @@ module Kitchen
       def run_command
         return if local_suite_files.empty?
         wrap_shell_code(Util.outdent!(<<-CMD
-          cd "#{File.join(config[:root_path],'suites/pester/' )}"
           $global:ProgressPreference = 'SilentlyContinue'
-          import-module Pester -force; invoke-pester -enableexit
+          $TestPath = "#{File.join(config[:root_path], 'suites')}"
+          import-module Pester -force; invoke-pester -path $testpath -enableexit
         CMD
         ))
       end
@@ -120,8 +128,12 @@ module Kitchen
       #private
 
       def restart_winrm_service
+
+        cmd = 'schtasks /Create /TN restart_winrm /TR ' /
+              '"powershell -command restart-service winrm" ' /
+              '/SC ONCE /ST 00:00 '
         wrap_shell_code(Util.outdent!(<<-CMD
-          schtasks /Create /TN restart_winrm /TR "powershell -command restart-service winrm" /SC ONCE /ST 00:00
+          #{cmd}
           schtasks /RUN /TN restart_winrm
         CMD
         ))
@@ -135,9 +147,12 @@ module Kitchen
       # @api private
 
       def local_suite_files
-        base = File.join(config[:test_base_path], config[:suite_name])
-        glob = File.join(base, "*/**/*")
-        Dir.glob(glob).reject do |f|
+        base = File.join(test_folder, config[:suite_name])
+        top_level_glob = File.join(base, "*")
+        folder_glob = File.join(base, "*/**/*")
+        top = Dir.glob(top_level_glob)
+        nested = Dir.glob(folder_glob)
+        (top << nested).flatten!.reject do |f|
           File.directory?(f)
         end
       end
@@ -146,12 +161,14 @@ module Kitchen
       #
       # @api private
       def prepare_pester_tests
-        base = File.join(config[:test_base_path], config[:suite_name])
+        base = File.join(test_folder, config[:suite_name])
+        info("Preparing to copy files from #{base} to the SUT.")
 
         local_suite_files.each do |src|
           dest = File.join(sandbox_suites_dir, src.sub("#{base}/", ""))
+          debug("Copying #{src} to #{dest}")
           FileUtils.mkdir_p(File.dirname(dest))
-          FileUtils.cp(src, dest, :preserve => true)
+          FileUtils.cp(src, dest, preserve: true)
         end
       end
 
@@ -159,6 +176,18 @@ module Kitchen
       # @api private
       def sandbox_suites_dir
         File.join(sandbox_path, "suites")
+      end
+
+      def test_folder
+        return config[:test_base_path] if config[:test_folder].nil?
+        absolute_test_folder
+      end
+
+      def absolute_test_folder
+        path = (Pathname.new config[:test_folder]).realpath
+        integration_path = File.join(path, 'integration')
+        return path unless Dir.exist?(integration_path)
+        integration_path
       end
 
     end
