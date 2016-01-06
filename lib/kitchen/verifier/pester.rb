@@ -128,12 +128,8 @@ module Kitchen
       #private
 
       def restart_winrm_service
-
-        cmd = 'schtasks /Create /TN restart_winrm /TR ' /
-              '"powershell -command restart-service winrm" ' /
-              '/SC ONCE /ST 00:00 '
         wrap_shell_code(Util.outdent!(<<-CMD
-          #{cmd}
+          schtasks /Create /TN restart_winrm /TR "powershell -command restart-service winrm" /SC ONCE /ST 00:00
           schtasks /RUN /TN restart_winrm
         CMD
         ))
