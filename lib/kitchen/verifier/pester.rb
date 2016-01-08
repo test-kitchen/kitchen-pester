@@ -41,6 +41,33 @@ module Kitchen
         init_config(config)
       end
 
+      # Runs the verifier on the instance.
+      # Need to override Kitchen::Verifier::Base call method in case the
+      # :restart_winrm option is set to true. If :restart_winrm == true
+      # Pester needs to be installed BEFORE the connection is reset and
+      # tests executed.
+      #
+      # @param state [Hash] mutable instance state
+      # @raise [ActionFailed] if the action could not be completed 
+      def call(state)
+        create_sandbox
+        sandbox_dirs = Dir.glob(File.join(sandbox_path, "*"))
+
+        instance.transport.connection(state).execute(install_command)
+        restart_winrm(state) if config[:restart_winrm]
+        instance.transport.connection(state) do |conn|
+          info("Transferring files to #{instance.to_str}")
+          conn.upload(sandbox_dirs, config[:root_path])
+          debug('Transfer complete')
+          conn.execute(prepare_command)
+          conn.execute(run_command)
+        end
+      rescue Kitchen::Transport::TransportFailed => ex
+        raise ActionFailed, ex.message
+      ensure
+        cleanup_sandbox
+      end
+
       # Creates a temporary directory on the local workstation into which
       # verifier related files and directories can be copied or created. The
       # contents of this directory will be copied over to the instance before
@@ -98,7 +125,6 @@ module Kitchen
       #
       # @return [String] a command string
       def init_command
-        restart_winrm_service if config[:restart_winrm]
       end
 
       # Generates a command string which will perform any commands or
@@ -125,18 +151,18 @@ module Kitchen
         ))
       end
 
-      #private
+      private
 
-      def restart_winrm_service
-
-        cmd = 'schtasks /Create /TN restart_winrm /TR ' /
-              '"powershell -command restart-service winrm" ' /
-              '/SC ONCE /ST 00:00 '
-        wrap_shell_code(Util.outdent!(<<-CMD
-          #{cmd}
-          schtasks /RUN /TN restart_winrm
-        CMD
-        ))
+      # Changes the state[:connection_retry_sleep] value to force the 
+      # instance's current connection to close and open a new one. 
+      #
+      # @param state [Hash] mutable instance state
+      # @api private
+      def restart_winrm(state)
+        info('[PESTER] Closing the current connection and opening a new one')
+        sleep = state[:connection_retry_sleep]
+        sleep.nil? ? 2 : sleep + 1
+        instance.transport.connection(state.merge(connection_retry_sleep: sleep))
       end
 
       # Returns an Array of test suite filenames for the related suite currently
