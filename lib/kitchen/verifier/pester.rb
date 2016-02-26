@@ -77,6 +77,8 @@ module Kitchen
           if (-not (get-module -list pester)) {
             if (get-module -list PowerShellGet){
               import-module PowerShellGet -force
+              import-module PackageManagement -force
+              get-packageprovider -name NuGet -force
               install-module Pester -force
             }
             else {
