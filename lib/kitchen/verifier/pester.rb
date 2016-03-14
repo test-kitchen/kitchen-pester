@@ -32,6 +32,8 @@ module Kitchen
 
       default_config :restart_winrm, false
       default_config :test_folder
+      default_config :run_as_scheduled_task, false
+      default_config :use_local_pester_module, false
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -61,6 +63,7 @@ module Kitchen
       #   end
       def create_sandbox
         super
+        prepare_powershell_modules
         prepare_pester_tests
       end
 
@@ -71,26 +74,9 @@ module Kitchen
       # @return [String] a command string
       def install_command
         return if local_suite_files.empty?
+        return if config[:use_local_pester_module]
 
-        cmd = <<-CMD
-          set-executionpolicy unrestricted -force
-          if (-not (get-module -list pester)) {
-            if (get-module -list PowerShellGet){
-              import-module PowerShellGet -force
-              import-module PackageManagement -force
-              get-packageprovider -name NuGet -force | out-null
-              install-module Pester -force
-            }
-            else {
-              if (-not (get-module -list PsGet)){
-                iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
-              }
-              import-module psget -force
-              Install-Module Pester
-            }
-          }
-        CMD
-        wrap_shell_code(Util.outdent!(cmd))
+        really_wrap_shell_code(install_command_script)
       end
 
       # Generates a command string which will perform any data initialization
@@ -119,15 +105,123 @@ module Kitchen
       # @return [String] a command string
       def run_command
         return if local_suite_files.empty?
-        wrap_shell_code(Util.outdent!(<<-CMD
-          $global:ProgressPreference = 'SilentlyContinue'
-          $TestPath = "#{File.join(config[:root_path], 'suites')}"
-          import-module Pester -force; invoke-pester -path $testpath -enableexit
-        CMD
-        ))
+
+        cmd = if config[:run_as_scheduled_task]
+          wrap_scheduled_task('verify-run', run_command_script)
+        else
+          run_command_script
+        end
+
+        really_wrap_shell_code(cmd)
       end
 
       #private
+      def run_command_script
+        <<-CMD
+          $TestPath = "#{File.join(config[:root_path], 'pester')}";
+          import-module Pester -force;
+          $result = invoke-pester -path $testpath -passthru ;
+          $result |
+            export-clixml (join-path $testpath 'result.xml');
+          $host.setshouldexit($result.failedcount)
+        CMD
+      end
+
+      def really_wrap_shell_code(code)
+        wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
+      end
+
+      def use_local_powershell_modules(script)
+        <<-EOH
+          set-executionpolicy unrestricted -force;
+          $global:ProgressPreference = 'SilentlyContinue'
+          #{"$VerbosePreference = 'Continue'" if instance.logger.logdev.level == 0}
+          $env:psmodulepath += ";$(join-path (resolve-path $env:temp).path 'verifier/modules')";
+          # $env:psmodulepath -split ';' | % {write-output "PSModulePath contains:"} {write-output "`t$_"}
+          #{script}
+        EOH
+      end
+
+      def random_string
+        (0...8).map { (65 + rand(26)).chr }.join
+      end
+
+      def wrap_scheduled_task (name, script)
+        randomized_name = "#{name}-#{random_string}"
+        <<-EOH
+          import-module NamedPipes, ScheduledTaskRunner, PesterUtil
+          $Action = @'
+#{script}
+'@
+          $ScriptBlock = [scriptblock]::Create($action)
+          Add-ScheduledTaskCommand -name #{randomized_name} -Action $ScriptBlock
+          Invoke-ScheduledTaskCommand -name #{randomized_name}
+          $ExitCode = Get-ScheduledTaskExitCode -name #{randomized_name}
+          Remove-ScheduledTaskCommand -name #{randomized_name}
+          $TestResultPath = "#{File.join(config[:root_path], 'pester/result.xml')}"
+          $TestResults = import-clixml $TestResultPath
+          Write-Host
+          ConvertFrom-PesterOutputObject $TestResults
+          Write-Host
+          $host.SetShouldExit($ExitCode)
+        EOH
+      end
+
+      def install_command_script
+      <<-EOH
+        function directory($path){
+          if (test-path $path) {(resolve-path $path).providerpath}
+          else {(resolve-path (mkdir $path)).providerpath}
+        }
+        $VerifierModulePath = directory $env:temp/verifier/modules
+        $VerifierTestsPath = directory $env:temp/verifier/pester
+
+        function test-module($module){
+          (get-module $module -list) -ne $null
+        }
+        if (-not (test-module pester)) {
+          if (test-module PowerShellGet){
+            import-module PowerShellGet -force
+            import-module PackageManagement -force
+            get-packageprovider -name NuGet -force | out-null
+            install-module Pester -force
+          }
+          else {
+            if (-not (test-module PsGet)){
+              iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
+            }
+            try {
+              import-module psget -force -erroraction stop
+              Install-Module Pester
+            }
+            catch {
+              Write-Output "Installing from Github"
+              $zipfile = join-path(resolve-path "$env:temp/verifier") "pester.zip"
+              if (-not (test-path $zipfile)){
+                $source = 'https://github.com/pester/Pester/archive/3.3.14.zip'
+                [byte[]]$bytes = (new-object System.net.WebClient).DownloadData($source)
+                [IO.File]::WriteAllBytes($zipfile, $bytes)
+                $bytes = $null
+                [gc]::collect()
+                write-output "Downloaded Pester.zip"
+              }
+              write-output "Creating Shell.Application COM object"
+              $shellcom = new-object -com shell.application
+              Write-Output "Creating COM object for zip file."
+              $zipcomobject = $shellcom.namespace($zipfile)
+              Write-Output "Creating COM object for module destination."
+              $destination = $shellcom.namespace($VerifierModulePath)
+              Write-Output "Unpacking zip file."
+              $destination.CopyHere($zipcomobject.Items(), 0x610)
+              rename-item (join-path $VerifierModulePath "Pester-3.3.14") -newname 'Pester' -force
+            }
+          }
+        }
+        if (-not (test-module Pester)) {
+          throw "Unable to install Pester.  Please include Pester in your base image or install during your converge."
+        }
+      EOH
+      end
 
       def restart_winrm_service
 
@@ -148,36 +242,55 @@ module Kitchen
       # @return [Array<String>] array of suite files
       # @api private
 
+      def suite_test_folder
+        @suite_test_folder ||= File.join(test_folder, config[:suite_name])
+      end
+
+      def suite_level_glob
+        Dir.glob(File.join(suite_test_folder, "*"))
+      end
+
+      def suite_verifier_level_glob
+        Dir.glob(File.join(suite_test_folder, "*/**/*"))
+      end
+
       def local_suite_files
-        base = File.join(test_folder, config[:suite_name])
-        top_level_glob = File.join(base, "*")
-        folder_glob = File.join(base, "*/**/*")
-        top = Dir.glob(top_level_glob)
-        nested = Dir.glob(folder_glob)
-        (top << nested).flatten!.reject do |f|
+        suite = suite_level_glob
+        suite_verifier = suite_verifier_level_glob
+        (suite << suite_verifier).flatten!.reject do |f|
           File.directory?(f)
         end
+      end
+
+      def sandboxify_path(path)
+        File.join(sandbox_path, path.sub("#{suite_test_folder}/", ""))
       end
 
       # Copies all test suite files into the suites directory in the sandbox.
       #
       # @api private
       def prepare_pester_tests
-        base = File.join(test_folder, config[:suite_name])
-        info("Preparing to copy files from #{base} to the SUT.")
+        info("Preparing to copy files from #{suite_test_folder} to the SUT.")
 
         local_suite_files.each do |src|
-          dest = File.join(sandbox_suites_dir, src.sub("#{base}/", ""))
+          dest = sandboxify_path(src)
           debug("Copying #{src} to #{dest}")
           FileUtils.mkdir_p(File.dirname(dest))
           FileUtils.cp(src, dest, preserve: true)
         end
       end
 
-      # @return [String] path to suites directory under sandbox path
-      # @api private
-      def sandbox_suites_dir
-        File.join(sandbox_path, "suites")
+      def prepare_powershell_module(name)
+        FileUtils.mkdir_p(File.join(sandbox_path, "modules/#{name}"))
+        FileUtils.cp(File.join(File.dirname(__FILE__), "../../support/powershell/#{name}/#{name}.psm1"), File.join(sandbox_path, "modules/#{name}/#{name}.psm1"), preserve: true)
+      end
+
+      def prepare_powershell_modules
+        info("Preparing to copy supporting powershell modules.")
+        %w[NamedPipes ScheduledTaskRunner PesterUtil].each do |module_name|
+          prepare_powershell_module module_name
+        end
+
       end
 
       def test_folder
