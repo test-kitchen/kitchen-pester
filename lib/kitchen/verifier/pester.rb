@@ -118,7 +118,7 @@ module Kitchen
       #private
       def run_command_script
         <<-CMD
-          $TestPath = "#{File.join(config[:root_path], 'pester')}";
+          $TestPath = "#{config[:root_path]}";
           import-module Pester -force;
           $result = invoke-pester -path $testpath -passthru ;
           $result |
