@@ -34,6 +34,7 @@ module Kitchen
       default_config :test_folder
       default_config :run_as_scheduled_task, false
       default_config :use_local_pester_module, false
+      default_config :copy_helpers, false
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -65,6 +66,7 @@ module Kitchen
         super
         prepare_powershell_modules
         prepare_pester_tests
+        prepare_helpers if config[:copy_helpers]
       end
 
       # Generates a command string which will install and configure the
@@ -264,6 +266,31 @@ module Kitchen
 
       def sandboxify_path(path)
         File.join(sandbox_path, path.sub("#{suite_test_folder}/", ""))
+      end
+
+      # Returns an Array of common helper filenames currently residing on the
+      # local workstation.
+      #
+      # @return [Array<String>] array of helper files
+      # @api private
+      def helper_files
+        glob = Dir.glob(File.join(test_folder, "helpers", "*/**/*"))
+        glob.reject { |f| File.directory?(f) }
+      end
+
+      # Copies all common testing helper files into the suites directory in
+      # the sandbox.
+      #
+      # @api private
+      def prepare_helpers
+        base = File.join(test_folder, "helpers")
+
+        helper_files.each do |src|
+          dest = File.join(sandbox_path, src.sub("#{base}/", ""))
+          debug("Copying #{src} to #{dest}")
+          FileUtils.mkdir_p(File.dirname(dest))
+          FileUtils.cp(src, dest, preserve: true)
+        end
       end
 
       # Copies all test suite files into the suites directory in the sandbox.
