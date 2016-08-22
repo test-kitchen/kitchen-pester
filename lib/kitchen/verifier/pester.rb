@@ -34,7 +34,6 @@ module Kitchen
       default_config :test_folder
       default_config :run_as_scheduled_task, false
       default_config :use_local_pester_module, false
-      default_config :copy_helpers, false
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -66,7 +65,7 @@ module Kitchen
         super
         prepare_powershell_modules
         prepare_pester_tests
-        prepare_helpers if config[:copy_helpers]
+        prepare_helpers
       end
 
       # Generates a command string which will install and configure the
