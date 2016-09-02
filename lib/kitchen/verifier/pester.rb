@@ -32,7 +32,6 @@ module Kitchen
 
       default_config :restart_winrm, false
       default_config :test_folder
-      default_config :run_as_scheduled_task, false
       default_config :use_local_pester_module, false
 
       # Creates a new Verifier object using the provided configuration data
@@ -106,14 +105,7 @@ module Kitchen
       # @return [String] a command string
       def run_command
         return if local_suite_files.empty?
-
-        cmd = if config[:run_as_scheduled_task]
-          wrap_scheduled_task('verify-run', run_command_script)
-        else
-          run_command_script
-        end
-
-        really_wrap_shell_code(cmd)
+        really_wrap_shell_code(run_command_script)
       end
 
       #private
@@ -145,27 +137,6 @@ module Kitchen
 
       def random_string
         (0...8).map { (65 + rand(26)).chr }.join
-      end
-
-      def wrap_scheduled_task (name, script)
-        randomized_name = "#{name}-#{random_string}"
-        <<-EOH
-          import-module NamedPipes, ScheduledTaskRunner, PesterUtil
-          $Action = @'
-#{script}
-'@
-          $ScriptBlock = [scriptblock]::Create($action)
-          Add-ScheduledTaskCommand -name #{randomized_name} -Action $ScriptBlock
-          Invoke-ScheduledTaskCommand -name #{randomized_name}
-          $ExitCode = Get-ScheduledTaskExitCode -name #{randomized_name}
-          Remove-ScheduledTaskCommand -name #{randomized_name}
-          $TestResultPath = "#{File.join(config[:root_path], 'pester/result.xml')}"
-          $TestResults = import-clixml $TestResultPath
-          Write-Host
-          ConvertFrom-PesterOutputObject $TestResults
-          Write-Host
-          $host.SetShouldExit($ExitCode)
-        EOH
       end
 
       def install_command_script
@@ -308,12 +279,16 @@ module Kitchen
 
       def prepare_powershell_module(name)
         FileUtils.mkdir_p(File.join(sandbox_path, "modules/#{name}"))
-        FileUtils.cp(File.join(File.dirname(__FILE__), "../../support/powershell/#{name}/#{name}.psm1"), File.join(sandbox_path, "modules/#{name}/#{name}.psm1"), preserve: true)
+        FileUtils.cp(
+          File.join(File.dirname(__FILE__), "../../support/powershell/#{name}/#{name}.psm1"),
+          File.join(sandbox_path, "modules/#{name}/#{name}.psm1"),
+          preserve: true
+        )
       end
 
       def prepare_powershell_modules
         info("Preparing to copy supporting powershell modules.")
-        %w[NamedPipes ScheduledTaskRunner PesterUtil].each do |module_name|
+        %w[PesterUtil].each do |module_name|
           prepare_powershell_module module_name
         end
 
