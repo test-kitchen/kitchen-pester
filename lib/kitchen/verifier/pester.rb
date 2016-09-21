@@ -176,6 +176,7 @@ module Kitchen
         $VerifierModulePath = directory $env:temp/verifier/modules
         $VerifierTestsPath = directory $env:temp/verifier/pester
 
+	$env:psmodulepath += ";$VerifierModulePath"
         function test-module($module){
           (get-module $module -list) -ne $null
         }
@@ -188,7 +189,21 @@ module Kitchen
           }
           else {
             if (-not (test-module PsGet)){
-              iex (new-object Net.WebClient).DownloadString('http://bit.ly/GetPsGet')
+            $wc = New-Object -TypeName Net.WebClient
+
+            if($env:http_Proxy){
+              if($env:no_proxy){
+                Write-Output "Creating WebProxy with 'http_proxy' and 'no_proxy' environment variables.	
+                  $webproxy = New-Object System.Net.WebProxy($env:http_Proxy,$true,$env:no_proxy)
+                  }else{
+                Write-Output "Creating WebProxy with 'http_proxy' environment variable.
+                $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList ($env:http_Proxy)
+              }
+              
+              $wc.proxy = $webproxy    
+            }
+              
+            Invoke-Expression -Command $wc.DownloadString('http://bit.ly/GetPsGet')
             }
             try {
               import-module psget -force -erroraction stop
@@ -199,7 +214,21 @@ module Kitchen
               $zipfile = join-path(resolve-path "$env:temp/verifier") "pester.zip"
               if (-not (test-path $zipfile)){
                 $source = 'https://github.com/pester/Pester/archive/3.3.14.zip'
-                [byte[]]$bytes = (new-object System.net.WebClient).DownloadData($source)
+                $wc = New-Object -TypeName Net.WebClient
+
+                if($env:http_Proxy){
+                  if($env:no_proxy){
+                    Write-Output "Creating WebProxy with 'http_proxy' and 'no_proxy' environment variables."	
+                    $webproxy = New-Object System.Net.WebProxy($env:http_Proxy,$true,$env:no_proxy)
+                  }else{
+                    Write-Output "Creating WebProxy with 'http_proxy' environment variable."
+                    $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList ($env:http_Proxy)
+                  }
+	        
+                $wc.proxy = $webproxy    
+                }
+
+                [byte[]]$bytes = $wc.DownloadData($source)
                 [IO.File]::WriteAllBytes($zipfile, $bytes)
                 $bytes = $null
                 [gc]::collect()
