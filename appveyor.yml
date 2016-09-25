@@ -1,0 +1,40 @@
+version: "master-{build}"
+
+os: Windows Server 2012 R2
+platform:
+  - x64
+
+environment:
+  machine_user: test_user
+  machine_pass: Pass@word1
+  KITCHEN_YAML: .kitchen.appveyor.yml
+
+  matrix:
+    - ruby_version: "23"
+
+branches:
+  only:
+    - master
+
+# Do not build on tags (GitHub only)
+skip_tags: true
+
+#faster cloning
+clone_depth: 1
+
+# Install the latest nightly of ChefDK
+install:
+  - ps: net user /add $env:machine_user $env:machine_pass
+  - ps: net localgroup administrators $env:machine_user /add
+  - ps: $env:PATH="C:\Ruby$env:ruby_version\bin;$env:PATH"
+  - ps: Write-Host $env:PATH
+  - ps: ruby --version
+  - ps: gem --version
+  - ps: gem install bundler --quiet --no-ri --no-rdoc
+  - ps: bundler --version
+
+build_script:
+  - bundle install || bundle install || bundle install
+
+test_script:
+  - bundle exec kitchen verify
