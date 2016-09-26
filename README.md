@@ -1,4 +1,6 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/a63wtd8qpxe5bt4e/branch/master?svg=true)](https://ci.appveyor.com/project/test-kitchen/kitchen-pester/branch/master)
 [![Gem Version](https://badge.fury.io/rb/kitchen-pester.svg)](http://badge.fury.io/rb/kitchen-pester)
+
 # Kitchen::Pester
 
 Execute [Pester](https://github.com/pester/Pester) tests right from Test-Kitchen, without having to transit the Busser layer.
