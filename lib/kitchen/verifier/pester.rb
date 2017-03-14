@@ -128,100 +128,94 @@ module Kitchen
         <<-EOH
           set-executionpolicy unrestricted -force;
           $global:ProgressPreference = 'SilentlyContinue'
-          #{"$VerbosePreference = 'Continue'" if instance.logger.logdev.level == 0}
           $env:psmodulepath += ";$(join-path (resolve-path $env:temp).path 'verifier/modules')";
-          # $env:psmodulepath -split ';' | % {write-output "PSModulePath contains:"} {write-output "`t$_"}
           #{script}
         EOH
       end
 
-      def random_string
-        (0...8).map { (65 + rand(26)).chr }.join
-      end
-
       def install_command_script
-      <<-EOH
-        function directory($path){
-          if (test-path $path) {(resolve-path $path).providerpath}
-          else {(resolve-path (mkdir $path)).providerpath}
-        }
-        $VerifierModulePath = directory $env:temp/verifier/modules
-        $VerifierTestsPath = directory $env:temp/verifier/pester
-
-	$env:psmodulepath += ";$VerifierModulePath"
-        function test-module($module){
-          (get-module $module -list) -ne $null
-        }
-        if (-not (test-module pester)) {
-          if (test-module PowerShellGet){
-            import-module PowerShellGet -force
-            import-module PackageManagement -force
-            get-packageprovider -name NuGet -force | out-null
-            install-module Pester -force
+        <<-EOH
+          function directory($path){
+            if (test-path $path) {(resolve-path $path).providerpath}
+            else {(resolve-path (mkdir $path)).providerpath}
           }
-          else {
-            if (-not (test-module PsGet)){
-            $wc = New-Object -TypeName Net.WebClient
+          $VerifierModulePath = directory $env:temp/verifier/modules
+          $VerifierTestsPath = directory $env:temp/verifier/pester
 
-            if($env:http_Proxy){
-              if($env:no_proxy){
-                Write-Output "Creating WebProxy with 'http_proxy' and 'no_proxy' environment variables.	
-                  $webproxy = New-Object System.Net.WebProxy($env:http_Proxy,$true,$env:no_proxy)
-                  }else{
-                Write-Output "Creating WebProxy with 'http_proxy' environment variable.
-                $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList ($env:http_Proxy)
-              }
-              
-              $wc.proxy = $webproxy    
+    $env:psmodulepath += ";$VerifierModulePath"
+          function test-module($module){
+            (get-module $module -list) -ne $null
+          }
+          if (-not (test-module pester)) {
+            if (test-module PowerShellGet){
+              import-module PowerShellGet -force
+              import-module PackageManagement -force
+              get-packageprovider -name NuGet -force | out-null
+              install-module Pester -force
             }
-              
-            Invoke-Expression -Command $wc.DownloadString('http://bit.ly/GetPsGet')
-            }
-            try {
-              import-module psget -force -erroraction stop
-              Install-Module Pester
-            }
-            catch {
-              Write-Output "Installing from Github"
-              $zipfile = join-path(resolve-path "$env:temp/verifier") "pester.zip"
-              if (-not (test-path $zipfile)){
-                $source = 'https://github.com/pester/Pester/archive/3.3.14.zip'
-                $wc = New-Object -TypeName Net.WebClient
+            else {
+              if (-not (test-module PsGet)){
+              $wc = New-Object -TypeName Net.WebClient
 
-                if($env:http_Proxy){
-                  if($env:no_proxy){
-                    Write-Output "Creating WebProxy with 'http_proxy' and 'no_proxy' environment variables."	
+              if($env:http_Proxy){
+                if($env:no_proxy){
+                  Write-Output "Creating WebProxy with 'http_proxy' and 'no_proxy' environment variables.
                     $webproxy = New-Object System.Net.WebProxy($env:http_Proxy,$true,$env:no_proxy)
-                  }else{
-                    Write-Output "Creating WebProxy with 'http_proxy' environment variable."
-                    $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList ($env:http_Proxy)
-                  }
-	        
-                $wc.proxy = $webproxy    
+                    }else{
+                  Write-Output "Creating WebProxy with 'http_proxy' environment variable.
+                  $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList ($env:http_Proxy)
                 }
 
-                [byte[]]$bytes = $wc.DownloadData($source)
-                [IO.File]::WriteAllBytes($zipfile, $bytes)
-                $bytes = $null
-                [gc]::collect()
-                write-output "Downloaded Pester.zip"
+                $wc.proxy = $webproxy
               }
-              write-output "Creating Shell.Application COM object"
-              $shellcom = new-object -com shell.application
-              Write-Output "Creating COM object for zip file."
-              $zipcomobject = $shellcom.namespace($zipfile)
-              Write-Output "Creating COM object for module destination."
-              $destination = $shellcom.namespace($VerifierModulePath)
-              Write-Output "Unpacking zip file."
-              $destination.CopyHere($zipcomobject.Items(), 0x610)
-              rename-item (join-path $VerifierModulePath "Pester-3.3.14") -newname 'Pester' -force
+
+              Invoke-Expression -Command $wc.DownloadString('http://bit.ly/GetPsGet')
+              }
+              try {
+                import-module psget -force -erroraction stop
+                Install-Module Pester
+              }
+              catch {
+                Write-Output "Installing from Github"
+                $zipfile = join-path(resolve-path "$env:temp/verifier") "pester.zip"
+                if (-not (test-path $zipfile)){
+                  $source = 'https://github.com/pester/Pester/archive/3.3.14.zip'
+                  $wc = New-Object -TypeName Net.WebClient
+
+                  if($env:http_Proxy){
+                    if($env:no_proxy){
+                      Write-Output "Creating WebProxy with 'http_proxy' and 'no_proxy' environment variables."
+                      $webproxy = New-Object System.Net.WebProxy($env:http_Proxy,$true,$env:no_proxy)
+                    }else{
+                      Write-Output "Creating WebProxy with 'http_proxy' environment variable."
+                      $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList ($env:http_Proxy)
+                    }
+
+                  $wc.proxy = $webproxy
+                  }
+
+                  [byte[]]$bytes = $wc.DownloadData($source)
+                  [IO.File]::WriteAllBytes($zipfile, $bytes)
+                  $bytes = $null
+                  [gc]::collect()
+                  write-output "Downloaded Pester.zip"
+                }
+                write-output "Creating Shell.Application COM object"
+                $shellcom = new-object -com shell.application
+                Write-Output "Creating COM object for zip file."
+                $zipcomobject = $shellcom.namespace($zipfile)
+                Write-Output "Creating COM object for module destination."
+                $destination = $shellcom.namespace($VerifierModulePath)
+                Write-Output "Unpacking zip file."
+                $destination.CopyHere($zipcomobject.Items(), 0x610)
+                rename-item (join-path $VerifierModulePath "Pester-3.3.14") -newname 'Pester' -force
+              }
             }
           }
-        }
-        if (-not (test-module Pester)) {
-          throw "Unable to install Pester.  Please include Pester in your base image or install during your converge."
-        }
-      EOH
+          if (-not (test-module Pester)) {
+            throw "Unable to install Pester.  Please include Pester in your base image or install during your converge."
+          }
+        EOH
       end
 
       def restart_winrm_service
