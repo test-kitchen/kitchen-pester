@@ -258,7 +258,7 @@ module Kitchen
       end
 
       def sandboxify_path(path)
-        File.join(sandbox_path, path.sub("#{suite_test_folder}/", ""))
+        File.join(sandbox_path, path.sub(/#{suite_test_folder}\//i, ""))
       end
 
       # Returns an Array of common helper filenames currently residing on the
