@@ -9,9 +9,7 @@ Rake::TestTask.new(:unit) do |t|
   t.verbose = true
 end
 
-desc "Run all test suites"
-task test: unit
-
+task test: :unit
 
 begin
   require "chefstyle"
@@ -24,7 +22,7 @@ rescue LoadError
 end
 
 desc "Run all quality tasks"
-task quality: style
+task quality: :style
 
 begin
   require "yard"
@@ -37,13 +35,14 @@ task default: %i{test quality}
 
 begin
   require "github_changelog_generator/task"
-  require "kitchen/version"
+  require "kitchen/verifier/pester_version"
 
   GitHubChangelogGenerator::RakeTask.new :changelog do |config|
-    config.future_release = "v#{Kitchen::VERSION}"
-    config.enhancement_labels = "enhancement,Enhancement,New Feature,Feature,Improvement".split(",")
-    config.bug_labels = "bug,Bug".split(",")
-    config.exclude_labels = %w{Duplicate Question Discussion No_Changelog}
+    config.future_release = "v#{Kitchen::Verifier::PESTER_VERSION}"
+    config.issues = false
+    config.pulls = true
+    config.user = "test-kitchen"
+    config.project = "kitchen-pester"
   end
 rescue LoadError
   puts "github_changelog_generator is not available." \
