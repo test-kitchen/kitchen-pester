@@ -135,6 +135,7 @@ module Kitchen
 
       def install_command_script
         <<-EOH
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
           function directory($path){
             if (test-path $path) {(resolve-path $path).providerpath}
             else {(resolve-path (mkdir $path)).providerpath}
