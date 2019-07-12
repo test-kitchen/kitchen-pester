@@ -10,7 +10,9 @@ environment:
   KITCHEN_YAML: .kitchen.appveyor.yml
 
   matrix:
-    - ruby_version: "23"
+    - ruby_version: "24"
+    - ruby_version: "25"
+    - ruby_version: "26"
 
 branches:
   only:
@@ -30,7 +32,7 @@ install:
   - ps: Write-Host $env:PATH
   - ps: ruby --version
   - ps: gem --version
-  - ps: gem install bundler --quiet --no-ri --no-rdoc
+  - ps: gem install bundler --quiet --no-document
   - ps: bundler --version
 
 build_script:
