@@ -4,11 +4,11 @@ trigger:
   branches:
     include:
     - master
-    - smurawski/azure-pipelines
+
 pr:
   autoCancel: true
   branches:
-    include: 
+    include:
       - master
 
 stages:

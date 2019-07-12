@@ -9,17 +9,9 @@ Rake::TestTask.new(:unit) do |t|
   t.verbose = true
 end
 
-
 desc "Run all test suites"
-task test: %i{unit}
+task test: unit
 
-desc "Display LOC stats"
-task :stats do
-  puts "\n## Production Code Stats"
-  sh "countloc -r lib/kitchen lib/kitchen.rb"
-  puts "\n## Test Code Stats"
-  sh "countloc -r spec features"
-end
 
 begin
   require "chefstyle"
@@ -32,7 +24,7 @@ rescue LoadError
 end
 
 desc "Run all quality tasks"
-task quality: %i{style stats}
+task quality: style
 
 begin
   require "yard"

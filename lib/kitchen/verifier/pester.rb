@@ -16,9 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'pathname'
-require 'kitchen/verifier/base'
-require 'kitchen/verifier/pester_version'
+require "pathname"
+require "kitchen/verifier/base"
+require "kitchen/verifier/pester_version"
 
 module Kitchen
 
@@ -95,8 +95,7 @@ module Kitchen
       # required, then `nil` will be returned.
       #
       # @return [String] a command string
-      def prepare_command
-      end
+      def prepare_command; end
 
       # Generates a command string which will invoke the main verifier
       # command on the prepared instance. If no work is required, then `nil`
@@ -105,10 +104,11 @@ module Kitchen
       # @return [String] a command string
       def run_command
         return if local_suite_files.empty?
+
         really_wrap_shell_code(run_command_script)
       end
 
-      #private
+      # private
       def run_command_script
         <<-CMD
           $TestPath = "#{config[:root_path]}";
@@ -219,15 +219,14 @@ module Kitchen
       end
 
       def restart_winrm_service
-
-        cmd = 'schtasks /Create /TN restart_winrm /TR ' \
+        cmd = "schtasks /Create /TN restart_winrm /TR " \
               '"powershell -command restart-service winrm" ' \
-              '/SC ONCE /ST 00:00 '
+              "/SC ONCE /ST 00:00 "
         wrap_shell_code(Util.outdent!(<<-CMD
           #{cmd}
           schtasks /RUN /TN restart_winrm
         CMD
-        ))
+                                     ))
       end
 
       # Returns an Array of test suite filenames for the related suite currently
@@ -258,7 +257,7 @@ module Kitchen
       end
 
       def sandboxify_path(path)
-        File.join(sandbox_path, path.sub(/#{suite_test_folder}\//i, ""))
+        File.join(sandbox_path, path.sub(%r{#{suite_test_folder}/}i, ""))
       end
 
       # Returns an Array of common helper filenames currently residing on the
@@ -311,21 +310,22 @@ module Kitchen
 
       def prepare_powershell_modules
         info("Preparing to copy supporting powershell modules.")
-        %w[PesterUtil].each do |module_name|
+        %w{PesterUtil}.each do |module_name|
           prepare_powershell_module module_name
         end
-
       end
 
       def test_folder
         return config[:test_base_path] if config[:test_folder].nil?
+
         absolute_test_folder
       end
 
       def absolute_test_folder
         path = (Pathname.new config[:test_folder]).realpath
-        integration_path = File.join(path, 'integration')
+        integration_path = File.join(path, "integration")
         return path unless Dir.exist?(integration_path)
+
         integration_path
       end
 
