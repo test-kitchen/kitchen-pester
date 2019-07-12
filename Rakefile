@@ -9,44 +9,60 @@ Rake::TestTask.new(:unit) do |t|
   t.verbose = true
 end
 
+
 desc "Run all test suites"
-task :test => [:unit]
+task test: %i{unit}
 
 desc "Display LOC stats"
 task :stats do
   puts "\n## Production Code Stats"
-  sh "countloc -r lib"
+  sh "countloc -r lib/kitchen lib/kitchen.rb"
   puts "\n## Test Code Stats"
-  sh "countloc -r spec"
+  sh "countloc -r spec features"
 end
 
-require "finstyle"
-require "rubocop/rake_task"
-RuboCop::RakeTask.new(:style) do |task|
-  task.options << "--display-cop-names"
-  task.options << "--lint"
-  task.options << '--config' << '.rubocop.yml'
-  task.patterns = ['lib/**/*.rb']
-end
-
-require "cane/rake_task"
-desc "Run cane to check quality metrics"
-Cane::RakeTask.new do |cane|
-  cane.canefile = "./.cane"
+begin
+  require "chefstyle"
+  require "rubocop/rake_task"
+  RuboCop::RakeTask.new(:style) do |task|
+    task.options += ["--display-cop-names", "--no-color"]
+  end
+rescue LoadError
+  puts "chefstyle is not available. (sudo) gem install chefstyle to do style checking."
 end
 
 desc "Run all quality tasks"
-task :quality => [:cane, :style, :stats]
+task quality: %i{style stats}
 
-require "yard"
-YARD::Rake::YardocTask.new
-
-desc "Generate gem dependency graph"
-task :viz do
-  Bundler.with_clean_env do
-    sh "bundle viz --without test development guard " \
-      "--requirements --version"
-  end
+begin
+  require "yard"
+  YARD::Rake::YardocTask.new
+rescue LoadError
+  puts "yard is not available. (sudo) gem install yard to generate yard documentation."
 end
 
-task :default => [:test, :quality]
+task default: %i{test quality}
+
+begin
+  require "github_changelog_generator/task"
+  require "kitchen/version"
+
+  GitHubChangelogGenerator::RakeTask.new :changelog do |config|
+    config.future_release = "v#{Kitchen::VERSION}"
+    config.enhancement_labels = "enhancement,Enhancement,New Feature,Feature,Improvement".split(",")
+    config.bug_labels = "bug,Bug".split(",")
+    config.exclude_labels = %w{Duplicate Question Discussion No_Changelog}
+  end
+rescue LoadError
+  puts "github_changelog_generator is not available." \
+       " (sudo) gem install github_changelog_generator to generate changelogs"
+end
+
+namespace :docs do
+  desc "Deploy docs"
+  task :deploy do
+    sh "cd docs && hugo"
+    sh "aws --profile chef-cd s3 sync docs/public s3://test-kitchen-legacy.cd.chef.co --delete --acl public-read"
+    sh "aws --profile chef-cd cloudfront create-invalidation --distribution-id EQD8MRW086SRT --paths '/*'"
+  end
+end
