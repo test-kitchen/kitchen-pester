@@ -1,4 +1,7 @@
 ---
+variables:
+  BUNDLE_PATH: $(Pipeline.Workspace)/.bundle
+
 trigger:
   batch: true
   branches:
@@ -18,15 +21,15 @@ stages:
         strategy:
           matrix:
             Windows_Ruby25:
-              version: 2.5.3
+              version: 2.5
               imageName: 'windows-2019'
               task: windows_ci.bat
             Windows_Ruby26:
-              version: 2.6.1
+              version: 2.6
               imageName: 'windows-2019'
               task: windows_ci.bat
             Windows_Integration:
-              version: 2.6.1
+              version: 2.6
               imageName: 'windows-2019'
               task: windows_integration.bat
               machine_user: test_user
@@ -40,6 +43,11 @@ stages:
             inputs:
               versionSpec: $(version)
               addToPath: true
+          - task: CacheBeta@0
+            inputs:
+              key: gems | $(Agent.OS) | "$(version)" | kitchen-pester.gemspec
+              path: $(BUNDLE_PATH)
+            displayName: Cache gems
           - script: |
               echo "ruby version:"
               ruby --version
