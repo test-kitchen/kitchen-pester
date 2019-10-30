@@ -14,7 +14,7 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/test-kitchen/kitchen-pester"
   spec.license       = "Apache-2.0"
 
-  spec.files         = %w(LICENSE kitchen-pester.gemspec Gemfile Rakefile) + Dir.glob('lib/**/*')
+  spec.files         = %w{LICENSE kitchen-pester.gemspec Gemfile Rakefile} + Dir.glob("lib/**/*")
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "bundler"
