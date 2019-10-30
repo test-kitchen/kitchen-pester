@@ -1,4 +1,7 @@
 ---
+variables:
+  BUNDLE_PATH: $(Pipeline.Workspace)/.bundle
+
 trigger:
   batch: true
   branches:
@@ -40,6 +43,11 @@ stages:
             inputs:
               versionSpec: $(version)
               addToPath: true
+          - task: CacheBeta@0
+            inputs:
+              key: gems | $(Agent.OS) | "$(version)" | kitchen-pester.gemspec
+              path: $(BUNDLE_PATH)
+            displayName: Cache gems
           - script: |
               echo "ruby version:"
               ruby --version
