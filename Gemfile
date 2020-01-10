@@ -6,8 +6,8 @@ gemspec
 group :integration do
   gem "berkshelf"
   gem "kitchen-inspec"
-  gem "kitchen-dokken"
-  gem "kitchen-vagrant"
+  gem "kitchen-azurerm"
+  gem "kitchen-chocolatey"
 end
 
 group :changelog do

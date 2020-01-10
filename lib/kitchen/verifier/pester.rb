@@ -33,6 +33,7 @@ module Kitchen
       default_config :restart_winrm, false
       default_config :test_folder
       default_config :use_local_pester_module, false
+      default_config :downloads, ['./PesterTestResults.xml'] => './testresults'
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -108,12 +109,23 @@ module Kitchen
         really_wrap_shell_code(run_command_script)
       end
 
+      def call(state)
+        super
+
+        info("Downloading files from #{instance.to_str}")
+        config[:downloads].to_h.each do |remotes, local|
+          debug("Downloading #{Array(remotes).join(", ")} to #{local}")
+          conn.download(remotes, local)
+        end
+        debug("Download complete")
+      end
+
       # private
       def run_command_script
         <<-CMD
           $TestPath = "#{config[:root_path]}";
           import-module Pester -force;
-          $result = invoke-pester -path $testpath -passthru ;
+          $result = invoke-pester -OutputFile PesterTestResults.xml -OutputFormat NUnitXml -path $testpath -passthru ;
           $result |
             export-clixml (join-path $testpath 'result.xml');
           $host.setshouldexit($result.failedcount)

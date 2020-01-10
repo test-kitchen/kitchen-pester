@@ -1,0 +1,23 @@
+driver:
+  name: azurerm
+  subscription_id: <%= ENV['AZURE_SUBSCRIPTION_ID'] %>
+  machine_size: "Standard_D2_v2"
+  location: "West US 2"
+
+provisioner:
+  name: chocolatey
+  package_name: "git"
+
+platforms:
+  - name: windows-server-2016
+    driver:
+      image_urn: MicrosoftWindowsServer:WindowsServer:2016-Datacenter:latest
+
+transport:
+  name: winrm
+
+verifier:
+  name: pester
+
+suites:
+  - name: default
