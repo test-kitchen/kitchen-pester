@@ -33,7 +33,7 @@ module Kitchen
       default_config :restart_winrm, false
       default_config :test_folder
       default_config :use_local_pester_module, false
-      default_config :downloads, ['./PesterTestResults.xml'] => './testresults'
+      default_config :downloads, ["#{config[:root_path]}/PesterTestResults.xml"] => './testresults'
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -125,12 +125,13 @@ module Kitchen
       # private
       def run_command_script
         <<-CMD
-          $TestPath = "#{config[:root_path]}";
-          import-module Pester -force;
-          $result = invoke-pester -OutputFile PesterTestResults.xml -OutputFormat NUnitXml -path $testpath -passthru ;
-          $result |
-            export-clixml (join-path $testpath 'result.xml');
-          $host.setshouldexit($result.failedcount)
+          Import-Module Pester -Force
+          $TestPath = "#{config[:root_path]}"
+          $OutputFilePath = $TestPath | Join-Path -ChildPath 'PesterTestResults.xml'
+
+          $result = Invoke-Pester -OutputFile $OutputFilePath -OutputFormat NUnitXml -Path $TestPath -Passthru
+          $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
+          $host.SetShouldExit($result.FailedCount)
         CMD
       end
 
@@ -142,7 +143,7 @@ module Kitchen
         <<-EOH
           set-executionpolicy unrestricted -force;
           $global:ProgressPreference = 'SilentlyContinue'
-          $env:psmodulepath += ";$(join-path (resolve-path $env:temp).path 'verifier/modules')";
+          $env:psmodulepath += ";$(join-path (resolve-path $env:temp).path 'verifier/modules')"
           #{script}
         EOH
       end
