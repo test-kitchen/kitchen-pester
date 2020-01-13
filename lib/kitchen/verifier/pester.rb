@@ -114,8 +114,10 @@ module Kitchen
 
         info("Downloading files from #{instance.to_str}")
         config[:downloads].to_h.each do |remotes, local|
-          debug("Downloading #{Array(remotes).join(", ")} to #{local}")
-          conn.download(remotes, local)
+          instance.transport.connection(state) do |conn|
+            debug("Downloading #{Array(remotes).join(", ")} to #{local}")
+            conn.download(remotes, local)
+          end
         end
         debug("Download complete")
       end
