@@ -112,19 +112,7 @@ module Kitchen
       def call(state)
         super
 
-        info("Downloading test result files from #{instance.to_str}")
-        instance.transport.connection(state) do |conn|
-          config[:downloads].to_h.each do |remotes, local|
-            debug("Downloading #{Array(remotes).join(", ")} to #{local}")
-            remotes.each do |file|
-              local_path = File.join(local, file)
-              remote_path = File.join(config[:root_path], file)
-
-              conn.download(remote_path, local_path)
-            end
-          end
-        end
-        debug("Finished downloading test result files from #{instance.to_str}")
+        download_test_files(state)
       end
 
       # private
@@ -248,6 +236,26 @@ module Kitchen
           schtasks /RUN /TN restart_winrm
         CMD
                                      ))
+      end
+
+      def download_test_files(state)
+        info("Downloading test result files from #{instance.to_str}")
+
+        instance.transport.connection(state) do |conn|
+          config[:downloads].to_h.each do |remotes, local|
+            debug("Downloading #{Array(remotes).join(", ")} to #{local}")
+
+            remotes.each do |file|
+              safe_name = instance.name.gsub(/[^0-9A-Z-]/i, '_')
+              local_path = File.join(local, safe_name, file)
+              remote_path = File.join(config[:root_path], file)
+
+              conn.download(remote_path, local_path)
+            end
+          end
+        end
+
+        debug("Finished downloading test result files from #{instance.to_str}")
       end
 
       # Returns an Array of test suite filenames for the related suite currently
