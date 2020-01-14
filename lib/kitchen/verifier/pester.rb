@@ -33,7 +33,7 @@ module Kitchen
       default_config :restart_winrm, false
       default_config :test_folder
       default_config :use_local_pester_module, false
-      default_config :downloads, ["#{config[:root_path]}/PesterTestResults.xml"] => './testresults'
+      default_config :downloads, ["./PesterTestResults.xml"] => './testresults'
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -112,14 +112,19 @@ module Kitchen
       def call(state)
         super
 
-        info("Downloading files from #{instance.to_str}")
-        config[:downloads].to_h.each do |remotes, local|
-          instance.transport.connection(state) do |conn|
+        info("Downloading test result files from #{instance.to_str}")
+        instance.transport.connection(state) do |conn|
+          config[:downloads].to_h.each do |remotes, local|
             debug("Downloading #{Array(remotes).join(", ")} to #{local}")
-            conn.download(remotes, local)
+            remotes.each do |file|
+              local_path = File.join(local, file)
+              remote_path = File.join(config[:root_path], file)
+
+              conn.download(remote_path, local_path)
+            end
           end
         end
-        debug("Download complete")
+        debug("Finished downloading test result files from #{instance.to_str}")
       end
 
       # private
