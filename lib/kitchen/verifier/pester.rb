@@ -18,7 +18,7 @@
 
 require "pathname"
 require "kitchen/verifier/base"
-require "kitchen/verifier/pester_version"
+require_relative "pester_version"
 
 module Kitchen
 
