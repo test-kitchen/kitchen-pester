@@ -33,7 +33,7 @@ module Kitchen
       default_config :restart_winrm, false
       default_config :test_folder
       default_config :use_local_pester_module, false
-      default_config :downloads, ['./PesterTestResults.xml'] => './testresults'
+      default_config :downloads, ["./PesterTestResults.xml"] => './testresults'
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -112,23 +112,19 @@ module Kitchen
       def call(state)
         super
 
-        info("Downloading files from #{instance.to_str}")
-        config[:downloads].to_h.each do |remotes, local|
-          debug("Downloading #{Array(remotes).join(", ")} to #{local}")
-          conn.download(remotes, local)
-        end
-        debug("Download complete")
+        download_test_files(state)
       end
 
       # private
       def run_command_script
         <<-CMD
-          $TestPath = "#{config[:root_path]}";
-          import-module Pester -force;
-          $result = invoke-pester -OutputFile PesterTestResults.xml -OutputFormat NUnitXml -path $testpath -passthru ;
-          $result |
-            export-clixml (join-path $testpath 'result.xml');
-          $host.setshouldexit($result.failedcount)
+          Import-Module Pester -Force
+          $TestPath = "#{config[:root_path]}"
+          $OutputFilePath = $TestPath | Join-Path -ChildPath 'PesterTestResults.xml'
+
+          $result = Invoke-Pester -OutputFile $OutputFilePath -OutputFormat NUnitXml -Path $TestPath -Passthru
+          $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
+          $host.SetShouldExit($result.FailedCount)
         CMD
       end
 
@@ -140,7 +136,7 @@ module Kitchen
         <<-EOH
           set-executionpolicy unrestricted -force;
           $global:ProgressPreference = 'SilentlyContinue'
-          $env:psmodulepath += ";$(join-path (resolve-path $env:temp).path 'verifier/modules')";
+          $env:psmodulepath += ";$(join-path (resolve-path $env:temp).path 'verifier/modules')"
           #{script}
         EOH
       end
@@ -240,6 +236,26 @@ module Kitchen
           schtasks /RUN /TN restart_winrm
         CMD
                                      ))
+      end
+
+      def download_test_files(state)
+        info("Downloading test result files from #{instance.to_str}")
+
+        instance.transport.connection(state) do |conn|
+          config[:downloads].to_h.each do |remotes, local|
+            debug("Downloading #{Array(remotes).join(", ")} to #{local}")
+
+            remotes.each do |file|
+              safe_name = instance.name.gsub(/[^0-9A-Z-]/i, '_')
+              local_path = File.join(local, safe_name, file)
+              remote_path = File.join(config[:root_path], file)
+
+              conn.download(remote_path, local_path)
+            end
+          end
+        end
+
+        debug("Finished downloading test result files from #{instance.to_str}")
       end
 
       # Returns an Array of test suite filenames for the related suite currently
