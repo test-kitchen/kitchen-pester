@@ -109,10 +109,14 @@ module Kitchen
         really_wrap_shell_code(run_command_script)
       end
 
-      def call(state)
-        super
+      # Download functionality was added to the base verifier behavior after
+      # version 2.3.4
+      if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new('2.3.4')
+        def call(state)
+          super
 
-        download_test_files(state)
+          download_test_files(state)
+        end
       end
 
       # private
