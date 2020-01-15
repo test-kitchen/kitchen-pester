@@ -33,7 +33,7 @@ module Kitchen
       default_config :restart_winrm, false
       default_config :test_folder
       default_config :use_local_pester_module, false
-      default_config :downloads, ["./PesterTestResults.xml"] => './testresults'
+      default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -111,7 +111,7 @@ module Kitchen
 
       # Download functionality was added to the base verifier behavior after
       # version 2.3.4
-      if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new('2.3.4')
+      if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new("2.3.4")
         def call(state)
           super
 
@@ -250,7 +250,7 @@ module Kitchen
             debug("Downloading #{Array(remotes).join(", ")} to #{local}")
 
             remotes.each do |file|
-              safe_name = instance.name.gsub(/[^0-9A-Z-]/i, '_')
+              safe_name = instance.name.gsub(/[^0-9A-Z-]/i, "_")
               local_path = File.join(local, safe_name, file)
               remote_path = File.join(config[:root_path], file)
 
