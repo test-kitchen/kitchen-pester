@@ -18,6 +18,7 @@
 
 require "pathname"
 require "kitchen/verifier/base"
+require "kitchen/version"
 require_relative "pester_version"
 
 module Kitchen
@@ -128,7 +129,9 @@ module Kitchen
 
           $result = Invoke-Pester -OutputFile $OutputFilePath -OutputFormat NUnitXml -Path $TestPath -Passthru
           $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
-          $host.SetShouldExit($result.FailedCount)
+          $LASTEXITCODE = $result.FailedCount
+          $host.SetShouldExit($LASTEXITCODE)
+          exit $LASTEXITCODE
         CMD
       end
 
