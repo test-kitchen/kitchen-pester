@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.11.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.11.0) (2020-02-25)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.10.0...v0.11.0)
+
+**Merged pull requests:**
+
+- Fix for issue 47: When Pester tests fail, it should fail the build. [\#48](https://github.com/test-kitchen/kitchen-pester/pull/48) ([splatteredbits](https://github.com/splatteredbits))
+
 ## [v0.10.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.10.0) (2020-01-15)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.9.1...v0.10.0)
@@ -13,11 +21,14 @@
 - Update the build configuration with caching and looser ruby version deps [\#41](https://github.com/test-kitchen/kitchen-pester/pull/41) ([smurawski](https://github.com/smurawski))
 - Update minitest requirement from ~\> 5.3, \< 5.11 to ~\> 5.3, \< 5.14 [\#40](https://github.com/test-kitchen/kitchen-pester/pull/40) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Update github\_changelog\_generator requirement from 1.11.3 to 1.15.0 [\#39](https://github.com/test-kitchen/kitchen-pester/pull/39) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Actually include lib folder in the gem [\#38](https://github.com/test-kitchen/kitchen-pester/pull/38) ([stuartpreston](https://github.com/stuartpreston))
 
 ## [v0.9.1](https://github.com/test-kitchen/kitchen-pester/tree/v0.9.1) (2019-10-04)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.9.0...v0.9.1)
+
+**Merged pull requests:**
+
+- Actually include lib folder in the gem [\#38](https://github.com/test-kitchen/kitchen-pester/pull/38) ([stuartpreston](https://github.com/stuartpreston))
 
 ## [v0.9.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.9.0) (2019-09-16)
 
@@ -28,7 +39,6 @@
 - release v0.9.0 [\#34](https://github.com/test-kitchen/kitchen-pester/pull/34) ([smurawski](https://github.com/smurawski))
 - azure pipelines [\#32](https://github.com/test-kitchen/kitchen-pester/pull/32) ([smurawski](https://github.com/smurawski))
 - Loosen the Test Kitchen dep and shrink files shipped in the gem [\#31](https://github.com/test-kitchen/kitchen-pester/pull/31) ([tas50](https://github.com/tas50))
-- Default to TLS1.2 for PsGet/Pester install [\#30](https://github.com/test-kitchen/kitchen-pester/pull/30) ([briceo](https://github.com/briceo))
 
 ## [v0.8.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.8.0) (2017-06-19)
 
@@ -53,6 +63,7 @@
 
 **Merged pull requests:**
 
+- Default to TLS1.2 for PsGet/Pester install [\#30](https://github.com/test-kitchen/kitchen-pester/pull/30) ([briceo](https://github.com/briceo))
 - Flag to run tests in scheduled task [\#16](https://github.com/test-kitchen/kitchen-pester/pull/16) ([smurawski](https://github.com/smurawski))
 
 ## [v0.5.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.5.0) (2016-03-09)
