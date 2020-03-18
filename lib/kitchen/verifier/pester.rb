@@ -128,7 +128,9 @@ module Kitchen
           $TestPath = "#{config[:root_path]}"
           $OutputFilePath = Join-Path $TestPath -ChildPath 'PesterTestResults.xml'
 
-          $result = Invoke-Pester -OutputFile $OutputFilePath -OutputFormat NUnitXml -Path $TestPath -PassThru
+          $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
+
+          $result = Invoke-Pester -OutputFile $OutputFilePath -OutputFormat NUnitXml -Path $TestPath -PesterOption $option -PassThru
           $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
 
           $LASTEXITCODE = $result.FailedCount
