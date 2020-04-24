@@ -291,7 +291,7 @@ module Kitchen
           config[:downloads].to_h.each do |remotes, local|
             debug("Downloading #{Array(remotes).join(", ")} to #{local}")
 
-            remotes.each do |file|
+            Array(remotes).each do |file|
               safe_name = instance.name.gsub(/[^0-9A-Z-]/i, "_")
               local_path = File.join(local, safe_name, file)
               remote_path = File.join(config[:root_path], file)
