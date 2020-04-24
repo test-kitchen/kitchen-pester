@@ -15,8 +15,8 @@ group :changelog do
 end
 
 group :debug do
-  gem "pry"
-  gem "pry-byebug"
+  gem "pry", "~>0.12.0"
+  gem "pry-byebug", "~>3.8.0"
   gem "pry-stack_explorer"
 end
 
