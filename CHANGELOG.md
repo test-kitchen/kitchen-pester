@@ -1,5 +1,24 @@
 # Changelog
 
+## [v0.12.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.12.0) (2020-05-05)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.11.0...v0.12.0)
+
+**Implemented enhancements:**
+
+- Refactor PowerShell scripts [\#50](https://github.com/test-kitchen/kitchen-pester/pull/50) ([vexx32](https://github.com/vexx32))
+
+**Fixed bugs:**
+
+- \(\#57\) Download Pester zip to modules folder [\#58](https://github.com/test-kitchen/kitchen-pester/pull/58) ([vexx32](https://github.com/vexx32))
+- Properly handle custom downloads settings [\#54](https://github.com/test-kitchen/kitchen-pester/pull/54) ([vexx32](https://github.com/vexx32))
+
+**Merged pull requests:**
+
+- Update pry requirement from ~\>0.12.0 to ~\> 0.13.1 [\#59](https://github.com/test-kitchen/kitchen-pester/pull/59) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bind pry / pry-byebug to 0.13.x / 3.9.x to fix dependency resolution [\#55](https://github.com/test-kitchen/kitchen-pester/pull/55) ([vexx32](https://github.com/vexx32))
+- Update github\_changelog\_generator requirement from 1.15.0 to 1.15.2 [\#52](https://github.com/test-kitchen/kitchen-pester/pull/52) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+
 ## [v0.11.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.11.0) (2020-02-25)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.10.0...v0.11.0)
@@ -39,6 +58,7 @@
 - release v0.9.0 [\#34](https://github.com/test-kitchen/kitchen-pester/pull/34) ([smurawski](https://github.com/smurawski))
 - azure pipelines [\#32](https://github.com/test-kitchen/kitchen-pester/pull/32) ([smurawski](https://github.com/smurawski))
 - Loosen the Test Kitchen dep and shrink files shipped in the gem [\#31](https://github.com/test-kitchen/kitchen-pester/pull/31) ([tas50](https://github.com/tas50))
+- Default to TLS1.2 for PsGet/Pester install [\#30](https://github.com/test-kitchen/kitchen-pester/pull/30) ([briceo](https://github.com/briceo))
 
 ## [v0.8.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.8.0) (2017-06-19)
 
@@ -63,7 +83,6 @@
 
 **Merged pull requests:**
 
-- Default to TLS1.2 for PsGet/Pester install [\#30](https://github.com/test-kitchen/kitchen-pester/pull/30) ([briceo](https://github.com/briceo))
 - Flag to run tests in scheduled task [\#16](https://github.com/test-kitchen/kitchen-pester/pull/16) ([smurawski](https://github.com/smurawski))
 
 ## [v0.5.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.5.0) (2016-03-09)
