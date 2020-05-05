@@ -115,8 +115,19 @@ module Kitchen
       if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new("2.3.4")
         def call(state)
           super
-
+        ensure
           download_test_files(state)
+        end
+      else
+        def call (state)
+          super
+        rescue
+          # If the verifier reports failure, we need to download the files ourselves.
+          # Test Kitchen's base verifier doesn't have the download in an `ensure` block.
+          download_test_files(state)
+
+          # Rethrow original exception, we still want to register the failure.
+          raise
         end
       end
 
