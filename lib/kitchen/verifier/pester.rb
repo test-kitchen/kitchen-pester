@@ -141,7 +141,7 @@ module Kitchen
 
           $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
 
-          $result = Invoke-Pester -Script $TestPath -OutputFile $OutputFilePath -OutputFormat NUnitXml -PesterOption $option -PassThru
+          $result = Invoke-Pester -Script $TestPath -OutputFile $OutputFilePath -OutputFormat NUnitXml -PesterOption $options -PassThru
           $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
 
           $LASTEXITCODE = $result.FailedCount
@@ -236,11 +236,19 @@ module Kitchen
                           Import-Module -Name PsGet -Force -ErrorAction Stop
                       }
 
-                      Install-Module -Name Pester
+                      Install-Module -Name Pester -Force
                   }
                   catch {
                       Write-Host "Installing from Github"
-                      $zipfile = Join-Path (Get-Item -Path "$env:TEMP/module").FullName -ChildPath "pester.zip"
+
+                      $downloadFolder = if (Test-Path "$env:TEMP/PesterDownload") {
+                          "$env:TEMP/PesterDownload"
+                      }
+                      else {
+                          New-Item -ItemType Directory -Path "$env:TEMP/PesterDownload"
+                      }
+
+                      $zipFile = Join-Path (Get-Item -Path $downloadFolder).FullName -ChildPath "pester.zip"
 
                       if (-not (Test-Path $zipfile)) {
                           $source = 'https://github.com/pester/Pester/archive/4.10.1.zip'
