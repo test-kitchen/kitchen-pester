@@ -19,3 +19,8 @@
   - `git merge --no-ff release_x.xx.x`
 - [ ] Push release to rubygems:
   - [ ] `bundle exec rake release`
+  
+# Notes
+
+* When running the task to publish to rubygems, you will be prompted at the command line to log into rubygems
+* The version of ruby that is known to work with the current code base is 2.6.3p62
