@@ -119,7 +119,7 @@ module Kitchen
           download_test_files(state)
         end
       else
-        def call (state)
+        def call(state)
           super
         rescue
           # If the verifier reports failure, we need to download the files ourselves.
@@ -313,14 +313,7 @@ module Kitchen
         instance.transport.connection(state) do |conn|
           config[:downloads].to_h.each do |remotes, local|
             debug("Downloading #{Array(remotes).join(", ")} to #{local}")
-
-            Array(remotes).each do |file|
-              safe_name = instance.name.gsub(/[^0-9A-Z-]/i, "_")
-              local_path = File.join(local, safe_name, file)
-              remote_path = File.join(config[:root_path], file)
-
-              conn.download(remote_path, local_path)
-            end
+            conn.download(remotes, local)
           end
         end
 
