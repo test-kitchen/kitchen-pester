@@ -15,5 +15,7 @@
   - `git add ./CHANGELOG.md`
   - `git add ./lib/kitchen/verifier/pester_version.rb`
   - `git commit -m "Version bump & changelog for x.xx.x"`
+- [ ] Merge changes back to master
+  - `git merge --no-ff release_x.xx.x`
 - [ ] Push release to rubygems:
   - [ ] `bundle exec rake release`
