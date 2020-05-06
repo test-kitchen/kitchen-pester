@@ -115,8 +115,19 @@ module Kitchen
       if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new("2.3.4")
         def call(state)
           super
-
+        ensure
           download_test_files(state)
+        end
+      else
+        def call(state)
+          super
+        rescue
+          # If the verifier reports failure, we need to download the files ourselves.
+          # Test Kitchen's base verifier doesn't have the download in an `ensure` block.
+          download_test_files(state)
+
+          # Rethrow original exception, we still want to register the failure.
+          raise
         end
       end
 
@@ -130,7 +141,7 @@ module Kitchen
 
           $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
 
-          $result = Invoke-Pester -Script $TestPath -OutputFile $OutputFilePath -OutputFormat NUnitXml -PesterOption $option -PassThru
+          $result = Invoke-Pester -Script $TestPath -OutputFile $OutputFilePath -OutputFormat NUnitXml -PesterOption $options -PassThru
           $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
 
           $LASTEXITCODE = $result.FailedCount
@@ -225,11 +236,19 @@ module Kitchen
                           Import-Module -Name PsGet -Force -ErrorAction Stop
                       }
 
-                      Install-Module -Name Pester
+                      Install-Module -Name Pester -Force
                   }
                   catch {
                       Write-Host "Installing from Github"
-                      $zipfile = Join-Path (Get-Item -Path "$env:TEMP/module").FullName -ChildPath "pester.zip"
+
+                      $downloadFolder = if (Test-Path "$env:TEMP/PesterDownload") {
+                          "$env:TEMP/PesterDownload"
+                      }
+                      else {
+                          New-Item -ItemType Directory -Path "$env:TEMP/PesterDownload"
+                      }
+
+                      $zipFile = Join-Path (Get-Item -Path $downloadFolder).FullName -ChildPath "pester.zip"
 
                       if (-not (Test-Path $zipfile)) {
                           $source = 'https://github.com/pester/Pester/archive/4.10.1.zip'
@@ -294,14 +313,7 @@ module Kitchen
         instance.transport.connection(state) do |conn|
           config[:downloads].to_h.each do |remotes, local|
             debug("Downloading #{Array(remotes).join(", ")} to #{local}")
-
-            Array(remotes).each do |file|
-              safe_name = instance.name.gsub(/[^0-9A-Z-]/i, "_")
-              local_path = File.join(local, safe_name, file)
-              remote_path = File.join(config[:root_path], file)
-
-              conn.download(remote_path, local_path)
-            end
+            conn.download(remotes, local)
           end
         end
 
