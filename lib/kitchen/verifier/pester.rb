@@ -136,8 +136,8 @@ module Kitchen
         <<-CMD
           Import-Module -Name Pester -Force
 
-          $TestPath = "#{config[:root_path]}"
-          $OutputFilePath = Join-Path $TestPath -ChildPath 'PesterTestResults.xml'
+          $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
+          $OutputFilePath = Join-Path "#{config[:root_path]}" -ChildPath 'PesterTestResults.xml'
 
           $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
 
@@ -165,7 +165,7 @@ module Kitchen
           }
 
           $global:ProgressPreference = 'SilentlyContinue'
-          $env:PSModulePath = "$(Join-Path (Get-Item -Path $env:TEMP).FullName -ChildPath 'verifier/modules');$env:PSModulePath"
+          $env:PSModulePath = "$(Join-Path "#{config[:root_path]}" -ChildPath 'modules');$env:PSModulePath"
 
           #{script}
         EOH
@@ -197,7 +197,7 @@ module Kitchen
           }
 
           $VerifierModulePath = Confirm-Directory -Path $env:TEMP/verifier/modules
-          $VerifierTestsPath = Confirm-Directory -Path $env:TEMP/verifier/pester
+          $VerifierDownloadPath = Confirm-Directory -Path $env:TEMP/verifier/pester
 
           $env:PSModulePath = "$VerifierModulePath;$PSModulePath"
 
@@ -241,14 +241,7 @@ module Kitchen
                   catch {
                       Write-Host "Installing from Github"
 
-                      $downloadFolder = if (Test-Path "$env:TEMP/PesterDownload") {
-                          "$env:TEMP/PesterDownload"
-                      }
-                      else {
-                          New-Item -ItemType Directory -Path "$env:TEMP/PesterDownload"
-                      }
-
-                      $zipFile = Join-Path (Get-Item -Path $downloadFolder).FullName -ChildPath "pester.zip"
+                      $zipFile = Join-Path (Get-Item -Path $VerifierDownloadPath).FullName -ChildPath "pester.zip"
 
                       if (-not (Test-Path $zipfile)) {
                           $source = 'https://github.com/pester/Pester/archive/4.10.1.zip'
@@ -348,7 +341,7 @@ module Kitchen
       end
 
       def sandboxify_path(path)
-        File.join(sandbox_path, path.sub(%r{#{suite_test_folder}/}i, ""))
+        File.join(sandbox_path, "suites", path.sub(%r{#{suite_test_folder}/}i, ""))
       end
 
       # Returns an Array of common helper filenames currently residing on the
