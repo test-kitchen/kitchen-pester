@@ -2,7 +2,7 @@ gem "minitest"
 require "minitest/autorun"
 require "mocha/setup"
 
-require_relative '..\..\lib\kitchen\verifier\pester'
+require_relative "../../lib/kitchen/verifier/pester"
 
 class MockPester < Kitchen::Verifier::Pester
   def sandbox_path
@@ -21,6 +21,6 @@ describe "when sandboxifying a path" do
   end
 
   it "should ignore case" do
-    sandboxifiedPath.must_equal "C:/users/jdoe/temp/kitchen-temp/test"
+    _(sandboxifiedPath).must_equal "C:/users/jdoe/temp/kitchen-temp/test"
   end
 end
