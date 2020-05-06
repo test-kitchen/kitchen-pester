@@ -1,5 +1,18 @@
 # Changelog
 
+## [v0.12.1](https://github.com/test-kitchen/kitchen-pester/tree/v0.12.1) (2020-05-06)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.12.0...v0.12.1)
+
+**Fixed bugs:**
+
+- Fix downloading files on failure [\#61](https://github.com/test-kitchen/kitchen-pester/pull/61) ([vexx32](https://github.com/vexx32))
+
+**Merged pull requests:**
+
+- Update pry-byebug requirement from ~\>3.8.0 to ~\> 3.9.0 [\#62](https://github.com/test-kitchen/kitchen-pester/pull/62) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Add PROCESSES.md with release process [\#60](https://github.com/test-kitchen/kitchen-pester/pull/60) ([vexx32](https://github.com/vexx32))
+
 ## [v0.12.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.12.0) (2020-05-05)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.11.0...v0.12.0)
