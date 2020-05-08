@@ -196,8 +196,8 @@ module Kitchen
               @(Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue).Count -gt 0
           }
 
-          $VerifierModulePath = Confirm-Directory -Path $env:TEMP/verifier/modules
-          $VerifierDownloadPath = Confirm-Directory -Path $env:TEMP/verifier/pester
+          $VerifierModulePath = Confirm-Directory -Path (Join-Path #{config[:root_path]} -ChildPath 'modules')
+          $VerifierDownloadPath = Confirm-Directory -Path (Join-Path #{config[:root_path]} -ChildPath 'pester')
 
           $env:PSModulePath = "$VerifierModulePath;$PSModulePath"
 
