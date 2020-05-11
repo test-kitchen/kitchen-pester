@@ -21,6 +21,6 @@ describe "when sandboxifying a path" do
   end
 
   it "should ignore case" do
-    _(sandboxifiedPath).must_equal "C:/users/jdoe/temp/kitchen-temp/test"
+    _(sandboxifiedPath).must_equal "C:/users/jdoe/temp/kitchen-temp/suites/test"
   end
 end
