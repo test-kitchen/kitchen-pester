@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.12.2](https://github.com/test-kitchen/kitchen-pester/tree/v0.12.2) (2020-05-13)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.12.1...v0.12.2)
+
+**Fixed bugs:**
+
+- Fix path handling for suites [\#63](https://github.com/test-kitchen/kitchen-pester/pull/63) ([vexx32](https://github.com/vexx32))
+
 ## [v0.12.1](https://github.com/test-kitchen/kitchen-pester/tree/v0.12.1) (2020-05-06)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.12.0...v0.12.1)
