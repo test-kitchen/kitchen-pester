@@ -152,6 +152,10 @@ module Kitchen
       end
 
       def really_wrap_shell_code(code)
+        # hypothesis: if OS not windows (can we detect or assume from transport)
+        # write the wrapped shell code to file with the pwsh(-preview) shebang
+        # and execute the file
+        # leave as is for windows (but double check we can use pwsh & pwsh-preview too)
         wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
       end
 
