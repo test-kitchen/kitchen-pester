@@ -33,6 +33,11 @@ module Kitchen
 
       default_config :restart_winrm, false
       default_config :test_folder
+      # I want to add a way to copy modules from local to remote.
+      # most modern pipelines I see saves the modules needed locally, per project,
+      # and use those required modules in the build for, say, unit tests and other.
+      # easiest way and most flexible I can think of is to copy a list of folders to
+      # the SUT, and maybe add a way to add it to the PSModulePath
       default_config :use_local_pester_module, false
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
 
@@ -216,7 +221,7 @@ module Kitchen
                   Install-Module Pester -Force
               }
               else {
-                  if (-not (Test-Module -Name PsGet)){
+                  if (-not (Test-Module -Name PsGet)){ 
                       $webClient = New-Object -TypeName System.Net.WebClient
 
                       if ($env:HTTP_PROXY){
