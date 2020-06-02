@@ -221,7 +221,11 @@ module Kitchen
                   Install-Module Pester -Force
               }
               else {
-                  if (-not (Test-Module -Name PsGet)){ 
+                  if (-not (Test-Module -Name PsGet)){ # We should get rid of this. 
+                      # installing PSGet from someone we don't know's github raw is scary bad.
+                      # We don't want PSGet but maybe PowerShellget instead.
+                      # Maybe install from nupkg directly from a nuget feed (Odata), doing the nupkg unzip ourselves?
+                      # and we need PowerShellGet, v2 or v3
                       $webClient = New-Object -TypeName System.Net.WebClient
 
                       if ($env:HTTP_PROXY){
@@ -237,10 +241,13 @@ module Kitchen
                           $webClient.Proxy = $webproxy
                       }
 
-                      Invoke-Expression -Command $webClient.DownloadString('http://bit.ly/GetPsGet')
+                      Invoke-Expression -Command $webClient.DownloadString('http://bit.ly/GetPsGet') # this resolves to https://raw.githubusercontent.com/chaliy/psget/master/GetPsGet.ps1
+                      # then in turns installs https://github.com/psget/psget/raw/master/PsGet/PsGet.psm1
+                      # we should get rid of this relic
                   }
 
                   try {
+                    # We should change the below to PowerShellGet (I assume)
                       # If the module isn't already loaded, ensure we can import it.
                       if (-not (Get-Module -Name PsGet -ErrorAction SilentlyContinue)) {
                           Import-Module -Name PsGet -Force -ErrorAction Stop
@@ -276,6 +283,7 @@ module Kitchen
                           Write-Host "Downloaded Pester.zip"
                       }
 
+                      # Try Expand-Archive first, only fall back to COM... (PS < 5.1)
                       Write-Host "Creating Shell.Application COM object"
                       $shellcom = New-Object -ComObject Shell.Application
 
