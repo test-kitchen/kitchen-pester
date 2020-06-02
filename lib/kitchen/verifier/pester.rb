@@ -165,7 +165,8 @@ module Kitchen
           }
 
           $global:ProgressPreference = 'SilentlyContinue'
-          $env:PSModulePath = "$(Join-Path "#{config[:root_path]}" -ChildPath 'modules');$env:PSModulePath"
+          $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
+          $env:PSModulePath   = @($PSModPathToPrepend, $env:PSModulePath) -Join [io.path]::PathSeparator
 
           #{script}
         EOH
