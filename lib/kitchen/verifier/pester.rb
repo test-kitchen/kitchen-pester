@@ -16,7 +16,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+require "fileutils"
 require "pathname"
+require "kitchen/util"
 require "kitchen/verifier/base"
 require "kitchen/version"
 require_relative "pester_version"
@@ -39,6 +41,14 @@ module Kitchen
       # easiest way and most flexible I can think of is to copy a list of folders to
       # the SUT, and maybe add a way to add it to the PSModulePath
       default_config :use_local_pester_module, false
+      default_config :unzip_psmodule_from_nugetapi, [
+        {"ModuleName" => "PowerShellGet"},
+        {"ModuleName" => "PackageManagement"}
+      ]
+      default_config :psrepository_to_register
+      default_config :modules_from_gallery, []
+      default_config :pester_install_param, {"Name" => "Pester", "RequiredVersion" => "4.10.1", "Force" => true }
+      default_config :nuget_uri, "https://www.powershellgallery.com/api/v2"
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
 
       # Creates a new Verifier object using the provided configuration data
@@ -72,6 +82,13 @@ module Kitchen
         prepare_powershell_modules
         prepare_pester_tests
         prepare_helpers
+      end
+
+      def register_psrepository
+        return if config[:psrepository_to_register].nil?
+
+        info("Registering a new PowerShellGet Repository")
+        # "register-packagesource -providername PowerShellGet -name '#{psmodule_repository_name}' -location '#{config[:gallery_uri]}' -force -trusted"
       end
 
       # Generates a command string which will install and configure the
@@ -157,6 +174,37 @@ module Kitchen
         CMD
       end
 
+      def get_powershell_modules_from_nugetapi
+        
+        Array(config[:unzip_psmodule_from_nugetapi]).map do |powershell_module|
+          if powershell_module.is_a? Hash
+            <<-PSCode
+              ${#{powershell_module[:ModuleName]}} = #{ps_hash(powershell_module)}
+              Install-ModuleFromNuget -Module ${#{powershell_module[:ModuleName]}} -GalleryUrl '#{config[:nuget_uri]}'
+            PSCode
+          else
+            "Install-ModuleFromNuget -Module @{ModuleName = '#{powershell_module}'} -GalleryUrl '#{config[:nuget_uri]}'"
+          end
+        end
+      end
+
+      def install_pester
+        <<-PSCode
+        Write-Host "Installing Pester"
+        $InstallPesterParams = #{ps_hash(config[:pester_install_param])}
+        Install-module @InstallPesterParams
+
+        PSCode
+      end
+
+      def register_psrepositories
+        "Write-Host 'Registering PS Repositories not yet implemented'"
+      end
+
+      def install_modules_from_gallery
+        "Write-host 'Instaling modules from gallery not yet implemented'"
+      end
+      
       def really_wrap_shell_code(code)
         # hypothesis: if OS not windows (can we detect or assume from transport)
         # write the wrapped shell code to file with the pwsh(-preview) shebang
@@ -176,7 +224,9 @@ module Kitchen
 
           $global:ProgressPreference = 'SilentlyContinue'
           $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
-          $env:PSModulePath   = @($PSModPathToPrepend, $env:PSModulePath) -Join [io.path]::PathSeparator
+          if ($Env:PSModulePath.Split([io.path]::PathSeparator) -notcontains $PSModPathToPrepend) {
+            $env:PSModulePath   = @($PSModPathToPrepend, $env:PSModulePath) -Join [io.path]::PathSeparator
+          }
 
           #{script}
         EOH
@@ -186,10 +236,11 @@ module Kitchen
         <<-EOH
           $PowerShellGet = @{ModuleName = 'PowerShellGet'; ModuleVersion = '2.2.4.1';}
           $PackageManagement = @{ModuleName = 'PackageManagement'; ModuleVersion = '1.4.7';}
-          $GalleryUrl = 'https://www.powershellgallery.com/api/v2'
-          Install-ModuleFromNuget -Module $PowerShellGet
-          Install-ModuleFromNuget -Module $PackageManagement
-          Install-module Pester -RequiredVersion 4.10.1 -Force
+          $GalleryUrl = '#{config[:nuget_uri]}'
+          #{get_powershell_modules_from_nugetapi.join("\n")}
+          #{install_pester}
+          #{register_psrepositories}
+          #{install_modules_from_gallery}
         EOH
       end
 
@@ -223,19 +274,21 @@ module Kitchen
       #
       # @return [Array<String>] array of suite files
       # @api private
-
       def suite_test_folder
         @suite_test_folder ||= File.join(test_folder, config[:suite_name])
       end
 
+      # @api private
       def suite_level_glob
         Dir.glob(File.join(suite_test_folder, "*"))
       end
 
+      # @api private
       def suite_verifier_level_glob
         Dir.glob(File.join(suite_test_folder, "*/**/*"))
       end
 
+      # @api private
       def local_suite_files
         suite = suite_level_glob
         suite_verifier = suite_verifier_level_glob
@@ -244,6 +297,7 @@ module Kitchen
         end
       end
 
+      # @api private
       def sandboxify_path(path)
         File.join(sandbox_path, "suites", path.sub(%r{#{suite_test_folder}/}i, ""))
       end
@@ -270,6 +324,25 @@ module Kitchen
           debug("Copying #{src} to #{dest}")
           FileUtils.mkdir_p(File.dirname(dest))
           FileUtils.cp(src, dest, preserve: true)
+        end
+      end
+
+      # Creates a PowerShell hashtable from an ruby map.
+      # The only types supported for now are hash, string and Boolean.
+      #
+      # @api private
+      def ps_hash(obj, depth = 0)
+        if [true, false].include? obj
+          %{$#{obj}}
+        elsif obj.is_a?(Hash)
+          obj.map do |k, v|
+            %{#{pad(depth + 2)}#{ps_hash(k)} = #{ps_hash(v, depth + 2)}}
+          end.join(";\n").insert(0, "@{\n").insert(-1, "\n#{pad(depth)}}")
+        elsif obj.is_a?(Array)
+          array_string = obj.map { |v| ps_hash(v, depth + 4) }.join(",")
+          "#{pad(depth)}@(\n#{array_string}\n)"
+        else
+          %{"#{obj}"}
         end
       end
 
@@ -315,6 +388,10 @@ module Kitchen
         return path unless Dir.exist?(integration_path)
 
         integration_path
+      end
+
+      def pad(depth = 0)
+        " " * depth
       end
 
     end
