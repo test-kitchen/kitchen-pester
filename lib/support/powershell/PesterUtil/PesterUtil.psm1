@@ -31,11 +31,11 @@ function Install-ModuleFromNuget {
     $zipFileName    = "{0}.{1}.{2}" -f $Module.ModuleName, $Module.ModuleVersion, 'zip'
     $downloadedZip  = Join-Path -Path $tempPath $zipFileName
     $ModulePath     = Join-Path -Path $PSHome -ChildPath 'Modules'
-    $ModuleFolder  = Join-Path -Path $ModulePath -ChildPath $Module.ModuleName
-    if (Test-Path $Module.ModuleFolder -and $PSVersionTable.PSVersion.Major -lt 5) {
+    $ModuleFolder   = Join-Path -Path $ModulePath -ChildPath $Module.ModuleName
+    if (Test-Path $ModuleFolder -and $PSVersionTable.PSVersion.Major -lt 5) {
         Remove-Item -Recurse -Force -Path $ModuleFolder
     }
-    elseif ($PSVersionTable.PSVersion.Major -lt 5) {
+    elseif ($PSVersionTable.PSVersion.Major -gt 5) {
         $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $Module.ModuleVersion
     }
 
