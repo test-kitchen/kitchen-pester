@@ -28,22 +28,22 @@ function Install-ModuleFromNuget {
     )
 
     $tempPath       = [io.path]::GetTempPath()
-    $zipFileName    = "{0}.{1}.{2}" -f $Module.ModuleName, $Module.ModuleVersion, 'zip'
+    $zipFileName    = "{0}.{1}.{2}" -f $Module.Name, $Module.Version, 'zip'
     $downloadedZip  = Join-Path -Path $tempPath $zipFileName
     $ModulePath     = Join-Path -Path $PSHome -ChildPath 'Modules'
-    $ModuleFolder   = Join-Path -Path $ModulePath -ChildPath $Module.ModuleName
-    if (Test-Path $ModuleFolder -and $PSVersionTable.PSVersion.Major -lt 5) {
+    $ModuleFolder   = Join-Path -Path $ModulePath -ChildPath $Module.Name
+    if ((Test-Path $ModuleFolder) -and $PSVersionTable.PSVersion.Major -lt 5) {
         Remove-Item -Recurse -Force -Path $ModuleFolder
     }
     elseif ($PSVersionTable.PSVersion.Major -gt 5) {
-        $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $Module.ModuleVersion
+        $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $Module.Version
     }
 
     if (-not (Test-Path $ModuleFolder)) {
         $null = New-Item -Path $ModuleFolder -force -ItemType Directory
     }
 
-    $urlSuffix = "/package/$($Module.ModuleName)/$($Module.ModuleVersion)"
+    $urlSuffix = "/package/$($Module.Name)/$($Module.Version)"
     $nupkgUrl = $GalleryUrl.TrimEnd('/') + '/' + $urlSuffix.Trim('/')
     $wc = New-Object 'system.net.webclient'
     Write-Host -Object "Downloading Package from $nupkgUrl" 
