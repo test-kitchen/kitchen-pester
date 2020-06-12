@@ -21,6 +21,7 @@ require "pathname"
 require "kitchen/util"
 require "kitchen/verifier/base"
 require "kitchen/version"
+require "base64"
 require_relative "pester_version"
 
 module Kitchen
@@ -41,15 +42,18 @@ module Kitchen
       # easiest way and most flexible I can think of is to copy a list of folders to
       # the SUT, and maybe add a way to add it to the PSModulePath
       default_config :use_local_pester_module, false
-      default_config :unzip_psmodule_from_nugetapi, [
-        {"ModuleName" => "PowerShellGet"},
-        {"ModuleName" => "PackageManagement"}
-      ]
-      default_config :psrepository_to_register
-      default_config :modules_from_gallery, []
-      default_config :pester_install_param, {"Name" => "Pester", "RequiredVersion" => "4.10.1", "Force" => true }
-      default_config :nuget_uri, "https://www.powershellgallery.com/api/v2"
+      default_config :bootstrap, {
+        :repository_url => "https://www.powershellgallery.com/api/v2",
+        :modules => [
+          {"Name" => "PowerShellGet"},
+          {"Name" => "PackageManagement"}
+        ]
+      }
+      default_config :psrepository_to_register, []
+      default_config :pester_install, {"Name" => "Pester", "SkipPublisherCheck" => true, "Force" => true, "ErrorAction" => "Stop" }
+      default_config :install_modules, []
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
+      default_config :copy_folders, []
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -79,16 +83,11 @@ module Kitchen
       #   end
       def create_sandbox
         super
-        prepare_powershell_modules
+        prepare_supporting_psmodules
+        prepare_copy_folders
         prepare_pester_tests
         prepare_helpers
-      end
-
-      def register_psrepository
-        return if config[:psrepository_to_register].nil?
-
-        info("Registering a new PowerShellGet Repository")
-        # "register-packagesource -providername PowerShellGet -name '#{psmodule_repository_name}' -location '#{config[:gallery_uri]}' -force -trusted"
+        list_files(sandbox_path)
       end
 
       # Generates a command string which will install and configure the
@@ -96,7 +95,10 @@ module Kitchen
       # will be returned.
       #
       # @return [String] a command string
-      def install_command; end 
+      def install_command
+        # prepare ps modules now so that sandbox is already created
+        really_wrap_shell_code("Write-Host 'Running Install Command... done.'")
+      end
       # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
 
       # Generates a command string which will perform any data initialization
@@ -116,9 +118,7 @@ module Kitchen
       #
       # @return [String] a command string
       def prepare_command
-        return if local_suite_files.empty?
-        return if config[:use_local_pester_module]
-
+        info("Preparing the SUT and Pester dependencies...")
         really_wrap_shell_code(install_command_script)
       end
 
@@ -128,7 +128,6 @@ module Kitchen
       #
       # @return [String] a command string
       def run_command
-        return if local_suite_files.empty?
 
         really_wrap_shell_code(run_command_script)
       end
@@ -157,7 +156,7 @@ module Kitchen
       # private
       def run_command_script
         <<-CMD
-          Import-Module -Name Pester -Force
+          Import-Module -Name Pester -Force -ErrorAction Stop
 
           $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
           $OutputFilePath = Join-Path "#{config[:root_path]}" -ChildPath 'PesterTestResults.xml'
@@ -175,34 +174,69 @@ module Kitchen
       end
 
       def get_powershell_modules_from_nugetapi
-        
-        Array(config[:unzip_psmodule_from_nugetapi]).map do |powershell_module|
+        # don't return anything is the modules subkey or bootstrap is null
+        return if config.dig(:bootstrap, :modules).nil?
+
+        bootstrap = config[:bootstrap]
+        # if the repository url is set, use that as parameter to Install-ModuleFromNuget. Default is the PSGallery url
+        repository_url = bootstrap[:repository_url]
+        gallery_url_param = if repository_url
+          "-GalleryUrl '#{repository_url}'"
+        else
+          ""
+        end
+
+        info("Bootstrapping environment without PowerShellGet Provider...")
+        Array(bootstrap[:modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
             <<-PSCode
-              ${#{powershell_module[:ModuleName]}} = #{ps_hash(powershell_module)}
-              Install-ModuleFromNuget -Module ${#{powershell_module[:ModuleName]}} -GalleryUrl '#{config[:nuget_uri]}'
+              ${#{powershell_module[:Name]}} = #{ps_hash(powershell_module)}
+              Install-ModuleFromNuget -Module ${#{powershell_module[:Name]}} #{gallery_url_param}
             PSCode
           else
-            "Install-ModuleFromNuget -Module @{ModuleName = '#{powershell_module}'} -GalleryUrl '#{config[:nuget_uri]}'"
+            "Install-ModuleFromNuget -Module @{Name = '#{powershell_module}'} #{gallery_url_param}"
           end
         end
       end
 
-      def install_pester
-        <<-PSCode
-        Write-Host "Installing Pester"
-        $InstallPesterParams = #{ps_hash(config[:pester_install_param])}
-        Install-module @InstallPesterParams
+      def register_psrepository
+        return if config[:psrepository_to_register].nil?
+        # return if config[:psrepository_to_register].empty?
+        "Write-Host 'Registering PSRepositories..."
+        info("Registering a new PowerShellGet Repository")
+        # "register-packagesource -providername PowerShellGet -name '#{psmodule_repository_name}' -location '#{config[:gallery_uri]}' -force -trusted"
+      end
 
+      def install_pester
+        return if config[:use_local_pester_module]
+
+        <<-PSCode
+        Write-Host "Installing Pester..."
+        $InstallPesterParams = #{ps_hash(config[:pester_install])}
+        Install-module @InstallPesterParams
+        Write-Host '... Pester Installed.'
         PSCode
       end
 
-      def register_psrepositories
-        "Write-Host 'Registering PS Repositories not yet implemented'"
-      end
-
       def install_modules_from_gallery
-        "Write-host 'Instaling modules from gallery not yet implemented'"
+        return if config[:install_modules].nil?
+        Array(config[:install_modules]).map do |powershell_module|
+          if powershell_module.is_a? Hash
+            module_name = powershell_module[:Name].gsub(/[\.-]/, "_")
+            <<-PSCode
+                  $#{module_name} = #{ps_hash(powershell_module)}
+                  Write-host 'Instaling #{module_name}'
+                  Install-Module @#{module_name}
+                  Write-host '... done.'
+            PSCode
+          else
+            <<-PSCode
+              Write-host 'Installing #{powershell_module} ...'
+              Install-Module -Name '#{powershell_module}'
+              Write-host '... done.'
+            PSCode
+          end
+        end
       end
       
       def really_wrap_shell_code(code)
@@ -210,13 +244,31 @@ module Kitchen
         # write the wrapped shell code to file with the pwsh(-preview) shebang
         # and execute the file
         # leave as is for windows (but double check we can use pwsh & pwsh-preview too)
-        wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
+        if windows_os?
+          wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
+        else
+          encoded_command = Base64.encode64(Util.outdent!(use_local_powershell_modules(code)))
+          
+          <<-EOH
+          cat <<'EOF' > current.ps1
+          #!/usr/bin/env pwsh
+          #{Util.outdent!(use_local_powershell_modules(code))}
+          EOF
+          chmod +x current.ps1
+          ./current.ps1
+          EOH
+        end
       end
 
       def use_local_powershell_modules(script)
         <<-EOH
           try {
+            if ($isLinux) {
+              Write-Host 'This is linux'
+            }
+            else {
               Set-ExecutionPolicy Unrestricted -force
+            }
           }
           catch {
               $_ | Out-String | Write-Warning
@@ -224,6 +276,12 @@ module Kitchen
 
           $global:ProgressPreference = 'SilentlyContinue'
           $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
+          Write-Host "Adding '$PSModPathToPrepend' to `$Env:PSModulePath."
+          # Tree /F "$PSModPathToPrepend/.."
+          if (-not (Test-Path -Path $PSModPathToPrepend)) {
+            $null = New-Item -Path $PSModPathToPrepend -Force -ItemType Directory
+          }
+          
           if ($Env:PSModulePath.Split([io.path]::PathSeparator) -notcontains $PSModPathToPrepend) {
             $env:PSModulePath   = @($PSModPathToPrepend, $env:PSModulePath) -Join [io.path]::PathSeparator
           }
@@ -234,17 +292,23 @@ module Kitchen
 
       def install_command_script
         <<-EOH
-          $PowerShellGet = @{ModuleName = 'PowerShellGet'; ModuleVersion = '2.2.4.1';}
-          $PackageManagement = @{ModuleName = 'PackageManagement'; ModuleVersion = '1.4.7';}
-          $GalleryUrl = '#{config[:nuget_uri]}'
+          $PSModPathToPrepend = "#{config[:root_path]}"
+
+          Import-Module -ErrorAction Stop PesterUtil
+
           #{get_powershell_modules_from_nugetapi.join("\n")}
+
+          #{register_psrepository}
+
           #{install_pester}
-          #{register_psrepositories}
-          #{install_modules_from_gallery}
+          
+          #{install_modules_from_gallery.join("\n")}
         EOH
       end
 
       def restart_winrm_service
+        return if verifier.windows_os?
+
         cmd = "schtasks /Create /TN restart_winrm /TR " \
               '"powershell -Command Restart-Service winrm" ' \
               "/SC ONCE /ST 00:00 "
@@ -278,28 +342,12 @@ module Kitchen
         @suite_test_folder ||= File.join(test_folder, config[:suite_name])
       end
 
-      # @api private
-      def suite_level_glob
-        Dir.glob(File.join(suite_test_folder, "*"))
+      def script_root
+        @script_root ||= File.dirname(__FILE__)
       end
 
-      # @api private
-      def suite_verifier_level_glob
-        Dir.glob(File.join(suite_test_folder, "*/**/*"))
-      end
-
-      # @api private
-      def local_suite_files
-        suite = suite_level_glob
-        suite_verifier = suite_verifier_level_glob
-        (suite << suite_verifier).flatten!.reject do |f|
-          File.directory?(f)
-        end
-      end
-
-      # @api private
-      def sandboxify_path(path)
-        File.join(sandbox_path, "suites", path.sub(%r{#{suite_test_folder}/}i, ""))
+      def support_psmodule_folder
+        @support_psmodule_folder ||= Pathname.new(File.join(script_root, "../../support/modules/PesterUtil")).cleanpath
       end
 
       # Returns an Array of common helper filenames currently residing on the
@@ -346,33 +394,64 @@ module Kitchen
         end
       end
 
+      def sandbox_module_path
+        return File.join(sandbox_path, "modules")
+      end
+
+      def prepare_copy_folders
+        return if config[:copy_folders].nil?
+        info("Preparing to copy specified folders to #{sandbox_module_path}.")
+        kitchen_root_path = config[:kitchen_root]
+        config[:copy_folders].each do |folder|
+          debug("copying #{folder}")
+          folder_to_copy = File.join(kitchen_root_path, folder)
+          copy_if_dir_exists(folder, sandbox_module_path)
+        end
+      end
+
+      def list_files(path)
+        base_directory_content = Dir.glob(File.join(path, "*"))
+        nested_directory_content = Dir.glob(File.join(path, "*/**/*"))
+        all_directory_content = [base_directory_content, nested_directory_content].flatten
+        debug("\n\n")
+        debug("Sandbox content:\n")
+        all_directory_content.each do |f|
+          debug("    #{f}")
+        end
+      end
+     
       # Copies all test suite files into the suites directory in the sandbox.
       #
       # @api private
       def prepare_pester_tests
-        info("Preparing to copy files from #{suite_test_folder} to the SUT.")
-
-        local_suite_files.each do |src|
-          dest = sandboxify_path(src)
-          debug("Copying #{src} to #{dest}")
-          FileUtils.mkdir_p(File.dirname(dest))
-          FileUtils.cp(src, dest, preserve: true)
-        end
+        info("Preparing to copy files from '#{config[:suite_name]}' to the SUT.")
+        sandboxed_suites_path = File.join(sandbox_path, "suites")
+        copy_if_dir_exists(suite_test_folder, sandboxed_suites_path)
       end
 
-      def prepare_powershell_module(name)
-        FileUtils.mkdir_p(File.join(sandbox_path, "modules/#{name}"))
-        FileUtils.cp(
-          File.join(File.dirname(__FILE__), "../../support/powershell/#{name}/#{name}.psm1"),
-          File.join(sandbox_path, "modules/#{name}/#{name}.psm1"),
-          preserve: true
-        )
+      def prepare_supporting_psmodules
+        info("XXXXXXXXXXXXXXXXXXXXXX Preparing to copy files from '#{support_psmodule_folder} to the SUT.")
+        sandbox_module_path = File.join(sandbox_path, "modules")
+        copy_if_dir_exists(support_psmodule_folder, sandbox_module_path)
       end
 
-      def prepare_powershell_modules
-        info("Preparing to copy supporting powershell modules.")
-        %w{PesterUtil}.each do |module_name|
-          prepare_powershell_module module_name
+      def copy_if_dir_exists(src_to_validate, destination)
+        if Dir.exist?(src_to_validate)
+          info("Moving #{src_to_validate} to #{destination}")
+          unless Dir.exist?(destination)
+            FileUtils.mkdir_p(destination)
+            info("Folder '#{destination}' created.")
+          end
+          FileUtils.mkdir_p(File.join(destination, '__bugfix'))
+          folderToCreate = File.basename(src_to_validate)
+          # unless Dir.exist?(File.join(destination, folderToCreate, '__bugfix'))
+          #   FileUtils.mkdir_p(File.join(destination, folderToCreate, '__bugfix'))
+          #   out_file = File.new(File.join(destination, folderToCreate,  '__bugfix', '__bugfix.txt'), "w")
+          #   info("Bugfix created.")
+          # end
+          FileUtils.cp_r(src_to_validate, destination)
+        else
+          info("The modules path #{src_to_validate} was not found. Not moving to #{destination}.")
         end
       end
 
