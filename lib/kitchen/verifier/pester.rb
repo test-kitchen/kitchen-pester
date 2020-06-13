@@ -87,7 +87,12 @@ module Kitchen
         prepare_copy_folders
         prepare_pester_tests
         prepare_helpers
-        list_files(sandbox_path)
+
+        debug("\n\n")
+        debug("Sandbox content:\n")
+        list_files(sandbox_path).each do |f|
+          debug("    #{f}")
+        end
       end
 
       # Generates a command string which will install and configure the
@@ -194,7 +199,9 @@ module Kitchen
               Install-ModuleFromNuget -Module ${#{powershell_module[:Name]}} #{gallery_url_param}
             PSCode
           else
-            "Install-ModuleFromNuget -Module @{Name = '#{powershell_module}'} #{gallery_url_param}"
+            <<-PSCode
+              Install-ModuleFromNuget -Module @{Name = '#{powershell_module}'} #{gallery_url_param}
+            PSCode
           end
         end
       end
@@ -413,11 +420,8 @@ module Kitchen
         base_directory_content = Dir.glob(File.join(path, "*"))
         nested_directory_content = Dir.glob(File.join(path, "*/**/*"))
         all_directory_content = [base_directory_content, nested_directory_content].flatten
-        debug("\n\n")
-        debug("Sandbox content:\n")
-        all_directory_content.each do |f|
-          debug("    #{f}")
-        end
+
+        return all_directory_content
       end
      
       # Copies all test suite files into the suites directory in the sandbox.

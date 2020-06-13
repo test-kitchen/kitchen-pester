@@ -32,10 +32,29 @@ function Install-ModuleFromNuget {
     $downloadedZip  = Join-Path -Path $tempPath $zipFileName
     $ModulePath     = Join-Path -Path $PSHome -ChildPath 'Modules'
     $ModuleFolder   = Join-Path -Path $ModulePath -ChildPath $Module.Name
-    if ((Test-Path $ModuleFolder) -and $PSVersionTable.PSVersion.Major -lt 5) {
-        Remove-Item -Recurse -Force -Path $ModuleFolder
+    if ((Test-Path $ModuleFolder) -and ($PSVersionTable.PSVersion.Major -lt 5 -or $module.Force)) {
+        # Check if available version is correct
+        $ModuleManifest = (Join-Path -Path $ModuleFolder -ChildPath "$($Module.Name).psd1")
+        if ((Test-Path -Path $ModuleManifest) -and -not $Module.Force) {
+            # Import-PowerShellDataFile only exists since 5.1
+            $ManifestInfo = Import-LocalizedData -BaseDirectory (Split-Path -Parent -Path $ModuleManifest) -FileName $Module.Name
+            $ModuleVersionNoPreRelease = $Module.Version -replace '-.*',''
+            # Compare the version in manifest with version required without Pre-release
+            if ($ManifestInfo.ModuleVersion -eq $ModuleVersionNoPreRelease) {
+                Write-Host "Module $($Module.Name) already installed, skipping."
+                return
+            }
+            else {
+                Write-Host "Module $($Module.Name) found with version '$($ManifestInfo.ModuleVersion)', expecting '$ModuleVersionNoPreRelease'."
+            }
+        }
+        else {
+            # if incorrect, remove it before install
+            Remove-Item -Recurse -Force -Path $ModuleFolder
+        }
     }
     elseif ($PSVersionTable.PSVersion.Major -gt 5) {
+        # skip if the version already exists or if force is enabled
         $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $Module.Version
     }
 
@@ -46,18 +65,25 @@ function Install-ModuleFromNuget {
     $urlSuffix = "/package/$($Module.Name)/$($Module.Version)"
     $nupkgUrl = $GalleryUrl.TrimEnd('/') + '/' + $urlSuffix.Trim('/')
     $wc = New-Object 'system.net.webclient'
-    Write-Host -Object "Downloading Package from $nupkgUrl" 
+    Write-Verbose -Object "Downloading Package from $nupkgUrl" 
     $wc.DownloadFile($nupkgUrl,$downloadedZip)
     if (-not (Test-Path -Path $downloadedZip)) {
         Throw "Error trying to download nupkg '$nupkgUrl' to '$downloadedZip'."
     }
     
-    Write-Host "Creating COM object for zip file '$downloadedZip'."
-    $shellcom = New-Object -ComObject Shell.Application
-    $zipcomobject = $shellcom.Namespace($downloadedZip)
-    $destination = $shellcom.Namespace($ModuleFolder)
-    $destination.CopyHere($zipcomobject.Items(), 0x610)
-    Write-Host "Nupkg installed at $ModuleFolder"
+    # Test to see if Expand-Archive is available first
+    if (Get-Command Expand-Archive) {
+        Expand-Archive -Path $downloadedZip -DestinationPath $ModuleFolder -Force
+    }
+    else {
+        # Fall back to COM object for Shell.Application zip extraction
+        Write-Host "Creating COM object for zip file '$downloadedZip'."
+        $shellcom = New-Object -ComObject Shell.Application
+        $zipcomobject = $shellcom.Namespace($downloadedZip)
+        $destination = $shellcom.Namespace($ModuleFolder)
+        $destination.CopyHere($zipcomobject.Items(), 0x610)
+        Write-Host "Nupkg installed at $ModuleFolder"
+    }
 }
 
 # $VerifierModulePath = Confirm-Directory -Path (Join-Path #{config[:root_path]} -ChildPath 'modules')
