@@ -248,26 +248,25 @@ module Kitchen
         if windows_os?
           wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
         else
-          encoded_command = Base64.encode64(Util.outdent!(use_local_powershell_modules(code)))
+          # encoded_command = Base64.encode64(Util.outdent!(use_local_powershell_modules(code)))
           
-          <<-EOH
-          cat <<'EOF' > current.ps1
+          myCommand = <<-EOH
+          cat << 'EOF' > current.ps1
           #!/usr/bin/env pwsh
           #{Util.outdent!(use_local_powershell_modules(code))}
           EOF
-          chmod +x current.ps1
-          ./current.ps1
+          sudo pwsh -f current.ps1
           EOH
+
+          debug(Util.outdent!(myCommand))
+          return Util.outdent!(myCommand)
         end
       end
 
       def use_local_powershell_modules(script)
         <<-EOH
           try {
-            if ($isLinux) {
-              Write-Host 'This is linux'
-            }
-            else {
+            if (!$isLinux) {
               Set-ExecutionPolicy Unrestricted -force
             }
           }
@@ -278,7 +277,6 @@ module Kitchen
           $global:ProgressPreference = 'SilentlyContinue'
           $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
           Write-Host "Adding '$PSModPathToPrepend' to `$Env:PSModulePath."
-          # Tree /F "$PSModPathToPrepend/.."
           if (-not (Test-Path -Path $PSModPathToPrepend)) {
             $null = New-Item -Path $PSModPathToPrepend -Force -ItemType Directory
           }
@@ -297,7 +295,7 @@ module Kitchen
 
           Import-Module -ErrorAction Stop PesterUtil
 
-          #{get_powershell_modules_from_nugetapi.join("\n")}
+          #{get_powershell_modules_from_nugetapi.join("\n") unless config.dig(:bootstrap, :modules).nil?}
 
           #{register_psrepository}
 
@@ -321,6 +319,8 @@ module Kitchen
       end
 
       def download_test_files(state)
+        return if config[:downloads].nil?
+        
         info("Downloading test result files from #{instance.to_str}")
 
         instance.transport.connection(state) do |conn|
