@@ -94,7 +94,7 @@ module Kitchen
       # @return [String] a command string
       def install_command
         # prepare ps modules now so that sandbox is already created
-        really_wrap_shell_code("Write-Host 'Running Install Command... done.'")
+        really_wrap_shell_code("Write-Verbose 'Running Install Command... done.'")
       end
       # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
 
@@ -210,8 +210,12 @@ module Kitchen
         return if config[:use_local_pester_module]
 
         <<-PSCode
-        Write-Host "Installing Pester..."
+        Write-Host -noNewline "Installing Pester..."
         $InstallPesterParams = #{ps_hash(config[:pester_install])}
+        if (!$InstallPesterParams.ContainsKey('Name')) {
+          $InstallPesterParams['Name'] = 'Pester'
+        }
+
         Install-module @InstallPesterParams
         Write-Host '... Pester Installed.'
         PSCode
@@ -226,13 +230,13 @@ module Kitchen
             # so we can splat that variable to install module
             <<-PSCode
                   $#{module_name} = #{ps_hash(powershell_module)}
-                  Write-host 'Instaling #{module_name}'
+                  Write-host -noNewline 'Instaling #{module_name}'
                   Install-Module @#{module_name}
                   Write-host '... done.'
             PSCode
           else
             <<-PSCode
-              Write-host 'Installing #{powershell_module} ...'
+              Write-host -noNewline 'Installing #{powershell_module} ...'
               Install-Module -Name '#{powershell_module}'
               Write-host '... done.'
             PSCode
@@ -276,7 +280,7 @@ module Kitchen
 
           $global:ProgressPreference = 'SilentlyContinue'
           $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
-          Write-Host "Adding '$PSModPathToPrepend' to `$Env:PSModulePath."
+          Write-Verbose "Adding '$PSModPathToPrepend' to `$Env:PSModulePath."
           if (-not (Test-Path -Path $PSModPathToPrepend)) {
             $null = New-Item -Path $PSModPathToPrepend -Force -ItemType Directory
           }
@@ -301,7 +305,7 @@ module Kitchen
 
           #{install_pester}
           
-          #{install_modules_from_gallery.join("\n")}
+          #{install_modules_from_gallery.join("\n") unless config[:install_modules].nil?}
         EOH
       end
 
@@ -422,23 +426,23 @@ module Kitchen
       #
       # @api private
       def prepare_pester_tests
-        info("Preparing to copy files from '#{config[:suite_name]}' to the SUT.")
+        info("Preparing to copy files from  '#{suite_test_folder}' to the SUT.")
         sandboxed_suites_path = File.join(sandbox_path, "suites")
         copy_if_dir_exists(suite_test_folder, sandboxed_suites_path)
       end
 
       def prepare_supporting_psmodules
-        info("XXXXXXXXXXXXXXXXXXXXXX Preparing to copy files from '#{support_psmodule_folder} to the SUT.")
+        debug("Preparing to copy files from '#{support_psmodule_folder}' to the SUT.")
         sandbox_module_path = File.join(sandbox_path, "modules")
         copy_if_dir_exists(support_psmodule_folder, sandbox_module_path)
       end
 
       def copy_if_dir_exists(src_to_validate, destination)
         if Dir.exist?(src_to_validate)
-          info("Moving #{src_to_validate} to #{destination}")
+          debug("Moving #{src_to_validate} to #{destination}")
           unless Dir.exist?(destination)
             FileUtils.mkdir_p(destination)
-            info("Folder '#{destination}' created.")
+            debug("Folder '#{destination}' created.")
           end
           FileUtils.mkdir_p(File.join(destination, '__bugfix'))
           folderToCreate = File.basename(src_to_validate)
