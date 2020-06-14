@@ -55,7 +55,12 @@ function Install-ModuleFromNuget {
     }
     elseif ($PSVersionTable.PSVersion.Major -gt 5) {
         # skip if the version already exists or if force is enabled
-        $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $Module.Version
+        $ModuleVersionNoPreRelease = $Module.Version -replace '-.*',''
+        $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $ModuleVersionNoPreRelease
+        if (-not $Module.Force -and (Test-Path -Path $ModuleFolder)) {
+            Write-Verbose -Message "Module already installed."
+            return
+        }
     }
 
     if (-not (Test-Path $ModuleFolder)) {
