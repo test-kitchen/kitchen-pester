@@ -114,8 +114,8 @@ module Kitchen
           }
 
           if($modulesToRemove.ModuleBase.count -le 0) {
-          # for PS7 on linux  
-          return
+            # for PS7 on linux  
+            return
           }
 
           $modulesToRemove.ModuleBase | Foreach-Object {
@@ -284,14 +284,9 @@ module Kitchen
       end
       
       def really_wrap_shell_code(code)
-        # hypothesis: if OS not windows (can we detect or assume from transport)
-        # write the wrapped shell code to file with the pwsh(-preview) shebang
-        # and execute the file
-        # leave as is for windows (but double check we can use pwsh & pwsh-preview too)
         if windows_os?
           wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
         else
-          # encoded_command = Base64.encode64(Util.outdent!(use_local_powershell_modules(code)))
           if config[:sudo]
             pwsh_cmd = "sudo pwsh"
           else
