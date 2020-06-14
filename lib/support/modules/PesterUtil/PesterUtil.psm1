@@ -1,26 +1,5 @@
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
-function Confirm-Directory {
-    [CmdletBinding()]
-    param($Path)
-
-    $Item = if (Test-Path $Path) {
-        Get-Item -Path $Path
-    }
-    else {
-        New-Item -Path $Path -ItemType Directory
-    }
-
-    $Item.FullName
-}
-
-function Test-Module {
-    [CmdletBinding()]
-    param($Name)
-
-    @(Get-Module -Name $Name -ListAvailable -ErrorAction SilentlyContinue).Count -gt 0
-}
-
 function Install-ModuleFromNuget {
     param (
         $Module,
@@ -106,6 +85,35 @@ function Install-ModuleFromNuget {
     }
 
     [GC]::Collect()
+}
+
+function Set-PSRepo {
+    param(
+        [Parameter(Mandatory)]
+        $Repository
+    )
+    if (-not (Get-Command Get-PSRepository) -and (Get-Command Get-PackageSource)) {
+        # Old version of PSGet do not have a *-PSrepository but have *-PackageSource instead.
+        if (Get-PackageSource -Name $Repository.Name)  {
+            Set-PackageSource @Repository
+        }
+        else {
+            Register-PackageSource @Repository
+        }
+    }
+    elseif (Get-Command Get-PSRepository) {
+        if (Get-PSRepository -Name $Repository.Name -ErrorAction SilentlyContinue) {
+            # The repo exists, we should use Set-PSRepository and splat parameters
+            Set-PSRepository @Repository
+        }
+        else {
+            # The repo does not exist, use Register-PSRepository and splat
+            Register-PSRepository @Repository
+        }
+    }
+    else {
+        Write-Host "Cannot Set PS Repository, command Set or Register for PSRepository or PackageSource not found."
+    }
 }
 
 function ConvertFrom-PesterOutputObject {

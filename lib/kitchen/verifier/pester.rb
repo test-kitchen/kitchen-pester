@@ -36,16 +36,20 @@ module Kitchen
 
       default_config :restart_winrm, false
       default_config :test_folder
+      default_config :remove_inbox_packagemanagement, true
+      default_config :remove_inbox_psget, true
+      default_config :remove_inbox_pester, true
       default_config :use_local_pester_module, false
       default_config :bootstrap, {
         :repository_url => "https://www.powershellgallery.com/api/v2",
         :modules => []
       }
-      default_config :psrepository_to_register, []
+      default_config :register_repository, []
       default_config :pester_install, {"Name" => "Pester", "SkipPublisherCheck" => true, "Force" => true, "ErrorAction" => "Stop" }
       default_config :install_modules, []
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
       default_config :copy_folders, []
+      default_config :sudo, true
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -93,8 +97,38 @@ module Kitchen
       #
       # @return [String] a command string
       def install_command
-        # prepare ps modules now so that sandbox is already created
-        really_wrap_shell_code("Write-Verbose 'Running Install Command... done.'")
+        # the sandbox has not yet been copied to the SUT.
+        install_command_string = <<-CMD
+          Write-Verbose 'Running Install Command...'
+          $modulesToRemove = @()
+          if ($#{config[:remove_inbox_packagemanagement]}) {
+            $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PackageManagement'; RequiredVersion = '1.0.0.1'}
+          }
+
+          if ($#{config[:remove_inbox_psget]}) {
+            $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PowerShellGet'; RequiredVersion = '1.0.0.1'}
+          }
+
+          if ($#{config[:remove_inbox_pester]}) {
+            $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'Pester'; RequiredVersion = '3.4.0'}
+          }
+
+          if($modulesToRemove.ModuleBase.count -le 0) {
+          # for PS7 on linux  
+          return
+          }
+
+          $modulesToRemove.ModuleBase | Foreach-Object {
+              $ModuleBaseLeaf = Split-Path -Path $_ -Leaf
+              if ($ModuleBaseLeaf -as [System.version]) {
+                Remove-Item -force -Recurse (Split-Path -Parent -Path $_) -ErrorAction SilentlyContinue
+              }
+              else {
+                Remove-Item -force -Recurse $_ -ErrorAction SilentlyContinue
+              }
+          }
+        CMD
+        really_wrap_shell_code(Util.outdent!(install_command_string))
       end
       # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
 
@@ -135,7 +169,7 @@ module Kitchen
         def call(state)
           super
         ensure
-          download_test_files(state)
+          download_test_files(state) unless config[:download].nil?
         end
       else
         def call(state)
@@ -143,7 +177,7 @@ module Kitchen
         rescue
           # If the verifier reports failure, we need to download the files ourselves.
           # Test Kitchen's base verifier doesn't have the download in an `ensure` block.
-          download_test_files(state)
+          download_test_files(state) unless config[:download].nil?
 
           # Rethrow original exception, we still want to register the failure.
           raise
@@ -199,25 +233,30 @@ module Kitchen
       end
 
       def register_psrepository
-        return if config[:psrepository_to_register].nil?
-        # return if config[:psrepository_to_register].empty?
+        return if config[:register_repository].nil?
         "Write-Host 'Registering PSRepositories..."
         info("Registering a new PowerShellGet Repository")
-        # "register-packagesource -providername PowerShellGet -name '#{psmodule_repository_name}' -location '#{config[:gallery_uri]}' -force -trusted"
+        config[:register_repository].each do |psrepo|
+          debug("Command to set PSRepo #{psrepo[:Name]}.")
+          <<-PSCode
+            ${#{psrepo[:Name]}} = #{ps_hash(psrepo)}
+            Set-PSRepo -Repository ${#{psrepo[:Name]}}
+          PSCode
+        end
       end
 
       def install_pester
         return if config[:use_local_pester_module]
-
+        pester_install_params = config[:pester_install] || {}
         <<-PSCode
         Write-Host -noNewline "Installing Pester..."
-        $InstallPesterParams = #{ps_hash(config[:pester_install])}
+        $InstallPesterParams = #{ps_hash(pester_install_params)}
         if (!$InstallPesterParams.ContainsKey('Name')) {
           $InstallPesterParams['Name'] = 'Pester'
         }
 
         Install-module @InstallPesterParams
-        Write-Host '... Pester Installed.'
+        Write-Host '... Done.'
         PSCode
       end
 
@@ -253,13 +292,20 @@ module Kitchen
           wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
         else
           # encoded_command = Base64.encode64(Util.outdent!(use_local_powershell_modules(code)))
-          
+          if config[:sudo]
+            pwsh_cmd = "sudo pwsh"
+          else
+            pwsh_cmd = "pwsh"
+          end
+
           myCommand = <<-EOH
+          echo "Running as '$(whoami)'"
           cat << 'EOF' > current.ps1
           #!/usr/bin/env pwsh
           #{Util.outdent!(use_local_powershell_modules(code))}
           EOF
-          sudo pwsh -f current.ps1
+          mkdir -p foo #{config[:root_path]}/modules
+          #{pwsh_cmd} -f current.ps1
           EOH
 
           debug(Util.outdent!(myCommand))
@@ -281,7 +327,8 @@ module Kitchen
           $global:ProgressPreference = 'SilentlyContinue'
           $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
           Write-Verbose "Adding '$PSModPathToPrepend' to `$Env:PSModulePath."
-          if (-not (Test-Path -Path $PSModPathToPrepend)) {
+          if (!$isLinux -and -not (Test-Path -Path $PSModPathToPrepend)) {
+            # if you create this folder now un Linux, it will run as root (via sudo).
             $null = New-Item -Path $PSModPathToPrepend -Force -ItemType Directory
           }
           
@@ -301,7 +348,7 @@ module Kitchen
 
           #{get_powershell_modules_from_nugetapi.join("\n") unless config.dig(:bootstrap, :modules).nil?}
 
-          #{register_psrepository}
+          #{register_psrepository.join("\n") unless config[:register_repository].nil?}
 
           #{install_pester}
           
@@ -310,7 +357,7 @@ module Kitchen
       end
 
       def restart_winrm_service
-        return if verifier.windows_os?
+        return if !verifier.windows_os?
 
         cmd = "schtasks /Create /TN restart_winrm /TR " \
               '"powershell -Command Restart-Service winrm" ' \
@@ -386,15 +433,21 @@ module Kitchen
       # @api private
       def ps_hash(obj, depth = 0)
         if [true, false].include? obj
-          %{$#{obj}}
+          %{$#{obj}} # Return $true or $false when value is a bool
         elsif obj.is_a?(Hash)
           obj.map do |k, v|
+            # Format "Key = Value" enabling recursion
             %{#{pad(depth + 2)}#{ps_hash(k)} = #{ps_hash(v, depth + 2)}}
-          end.join(";\n").insert(0, "@{\n").insert(-1, "\n#{pad(depth)}}")
+          end
+            .join(";\n")  # append ;\n to the key/value definitions
+            .insert(0, "@{\n") # prepend @{\n 
+            .insert(-1, "\n#{pad(depth)}}") # append }\n
+
         elsif obj.is_a?(Array)
           array_string = obj.map { |v| ps_hash(v, depth + 4) }.join(",")
           "#{pad(depth)}@(\n#{array_string}\n)"
         else
+          # When the object is not a string nor a hash or array, it will be quoted as a string.
           %{"#{obj}"}
         end
       end
@@ -446,12 +499,7 @@ module Kitchen
           end
           FileUtils.mkdir_p(File.join(destination, '__bugfix'))
           folderToCreate = File.basename(src_to_validate)
-          # unless Dir.exist?(File.join(destination, folderToCreate, '__bugfix'))
-          #   FileUtils.mkdir_p(File.join(destination, folderToCreate, '__bugfix'))
-          #   out_file = File.new(File.join(destination, folderToCreate,  '__bugfix', '__bugfix.txt'), "w")
-          #   info("Bugfix created.")
-          # end
-          FileUtils.cp_r(src_to_validate, destination)
+          FileUtils.cp_r(src_to_validate, destination, preserve: true)
         else
           info("The modules path #{src_to_validate} was not found. Not moving to #{destination}.")
         end
