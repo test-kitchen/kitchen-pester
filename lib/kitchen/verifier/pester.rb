@@ -221,7 +221,9 @@ module Kitchen
         return if config[:install_modules].nil?
         Array(config[:install_modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
+            # Sanitize variable name so that $powershell-yaml becomes $powershell_yaml
             module_name = powershell_module[:Name].gsub(/[\.-]/, "_")
+            # so we can splat that variable to install module
             <<-PSCode
                   $#{module_name} = #{ps_hash(powershell_module)}
                   Write-host 'Instaling #{module_name}'
