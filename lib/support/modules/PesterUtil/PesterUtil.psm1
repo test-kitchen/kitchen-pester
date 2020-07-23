@@ -2,10 +2,10 @@
 
 function Install-ModuleFromNuget {
     param (
-        [string]
+        [hashtable]
         $Module,
 
-        [uri]
+        [string]
         $GalleryUrl         = 'https://www.powershellgallery.com/api/v2'
     )
 
@@ -50,9 +50,9 @@ function Install-ModuleFromNuget {
         $null = New-Item -Path $ModuleFolder -force -ItemType Directory
     }
 
-    $urlSuffix = "/package/$($Module.Name)/$($Module.Version)"
-    $nupkgUrl = New-Object -TypeName System.Uri -ArgumentList $GalleryUrl, $urlSuffix
-    $wc = New-Object 'system.net.webclient'
+    $urlSuffix = "/package/$($Module.Name)/$($Module.Version)".TrimEnd('/')
+    $nupkgUrl = $GalleryUrl.TrimEnd('/') + '/' + $urlSuffix.Trim('/')
+    $webclient = New-Object 'system.net.webclient'
 
     if ($env:HTTP_PROXY){
         if ($env:NO_PROXY){
@@ -64,11 +64,21 @@ function Install-ModuleFromNuget {
             $webproxy = New-Object -TypeName System.Net.WebProxy -ArgumentList $env:HTTP_PROXY
         }
 
-        $wc.Proxy = $webproxy
+        $webclient.Proxy = $webproxy
     }
 
-    Write-Verbose -Object "Downloading Package from $nupkgUrl" 
-    $wc.DownloadFile($nupkgUrl,$downloadedZip)
+    Write-Verbose -Message "Downloading Package from $nupkgUrl"
+    try {
+        if (test-path $downloadedZip) {
+            Remove-Item -Force -ErrorAction SilentlyContinue -Path $downloadedZip
+        }
+        $webclient.DownloadFile($nupkgUrl, $downloadedZip)
+    }
+    catch {
+        Write-Error "Error trying to download nupkg '$nupkgUrl' to '$downloadedZip'."
+        throw $_
+    }
+    
     if (-not (Test-Path -Path $downloadedZip)) {
         Throw "Error trying to download nupkg '$nupkgUrl' to '$downloadedZip'."
     }

@@ -353,7 +353,7 @@ module Kitchen
           #{register_psrepository.join("\n") unless config[:register_repository].nil?}
 
           #{install_pester}
-          
+
           #{install_modules_from_gallery.join("\n") unless config[:install_modules].nil?}
         PS1
       end
