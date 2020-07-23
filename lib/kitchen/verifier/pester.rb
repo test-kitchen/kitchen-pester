@@ -1,5 +1,3 @@
-# -*- encoding: utf-8 -*-
-#
 # Author:: Steven Murawski (<steven.murawski@gmail.com>)
 #
 # Copyright (C) 2015, Steven Murawski
