@@ -36,16 +36,15 @@ module Kitchen
 
       default_config :restart_winrm, false
       default_config :test_folder
-      default_config :remove_inbox_packagemanagement, true
-      default_config :remove_inbox_psget, true
-      default_config :remove_inbox_pester, true
+      default_config :remove_builtin_powershellget, true
+      default_config :remove_builtin_pester, true
       default_config :use_local_pester_module, false
       default_config :bootstrap, {
         :repository_url => "https://www.powershellgallery.com/api/v2",
         :modules => []
       }
       default_config :register_repository, []
-      default_config :pester_install, {"Name" => "Pester", "SkipPublisherCheck" => true, "Force" => true, "ErrorAction" => "Stop" }
+      default_config :pester_install, { "SkipPublisherCheck" => true, "Force" => true, "ErrorAction" => "Stop" }
       default_config :install_modules, []
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
       default_config :copy_folders, []
@@ -98,18 +97,15 @@ module Kitchen
       # @return [String] a command string
       def install_command
         # the sandbox has not yet been copied to the SUT.
-        install_command_string = <<-CMD
+        install_command_string = <<-PSCode
           Write-Verbose 'Running Install Command...'
           $modulesToRemove = @()
-          if ($#{config[:remove_inbox_packagemanagement]}) {
+          if ($#{config[:remove_builtin_powershellget]}) {
             $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PackageManagement'; RequiredVersion = '1.0.0.1'}
-          }
-
-          if ($#{config[:remove_inbox_psget]}) {
             $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PowerShellGet'; RequiredVersion = '1.0.0.1'}
           }
 
-          if ($#{config[:remove_inbox_pester]}) {
+          if ($#{config[:remove_builtin_pester]}) {
             $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'Pester'; RequiredVersion = '3.4.0'}
           }
 
@@ -127,7 +123,7 @@ module Kitchen
                 Remove-Item -force -Recurse $_ -ErrorAction SilentlyContinue
               }
           }
-        CMD
+        PSCode
         really_wrap_shell_code(Util.outdent!(install_command_string))
       end
       # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
@@ -186,7 +182,7 @@ module Kitchen
 
       # private
       def run_command_script
-        <<-CMD
+        <<-PSCode
           Import-Module -Name Pester -Force -ErrorAction Stop
 
           $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
@@ -201,7 +197,7 @@ module Kitchen
           $host.SetShouldExit($LASTEXITCODE)
 
           exit $LASTEXITCODE
-        CMD
+        PSCode
       end
 
       def get_powershell_modules_from_nugetapi
@@ -249,14 +245,11 @@ module Kitchen
         return if config[:use_local_pester_module]
         pester_install_params = config[:pester_install] || {}
         <<-PSCode
-        Write-Host -noNewline "Installing Pester..."
-        $InstallPesterParams = #{ps_hash(pester_install_params)}
-        if (!$InstallPesterParams.ContainsKey('Name')) {
+          Write-Host "Installing Pester..."
+          $InstallPesterParams = #{ps_hash(pester_install_params)}
           $InstallPesterParams['Name'] = 'Pester'
-        }
-
-        Install-module @InstallPesterParams
-        Write-Host '... Done.'
+          Install-module @InstallPesterParams
+          Write-Host 'Pester Installed.'
         PSCode
       end
 
@@ -265,13 +258,13 @@ module Kitchen
         Array(config[:install_modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
             # Sanitize variable name so that $powershell-yaml becomes $powershell_yaml
-            module_name = powershell_module[:Name].gsub(/[\.-]/, "_")
+            module_name = powershell_module[:Name].gsub(/[\W]/, "_")
             # so we can splat that variable to install module
             <<-PSCode
-                  $#{module_name} = #{ps_hash(powershell_module)}
-                  Write-host -noNewline 'Instaling #{module_name}'
-                  Install-Module @#{module_name}
-                  Write-host '... done.'
+              $#{module_name} = #{ps_hash(powershell_module)}
+              Write-host -noNewline 'Instaling #{module_name}'
+              Install-Module @#{module_name}
+              Write-host '... done.'
             PSCode
           else
             <<-PSCode
@@ -293,15 +286,18 @@ module Kitchen
             pwsh_cmd = "pwsh"
           end
 
-          myCommand = <<-EOH
-          echo "Running as '$(whoami)'"
-          cat << 'EOF' > current.ps1
-          #!/usr/bin/env pwsh
-          #{Util.outdent!(use_local_powershell_modules(code))}
-          EOF
-          mkdir -p foo #{config[:root_path]}/modules
-          #{pwsh_cmd} -f current.ps1
-          EOH
+          myCommand = <<-BASH
+            echo "Running as '$(whoami)'"
+            # Send the bash heredoc 'EOF' to the file current.ps1 using the tool cat
+            cat << 'EOF' > current.ps1
+            #!/usr/bin/env pwsh
+            #{Util.outdent!(use_local_powershell_modules(code))}
+            EOF
+            # create the modules folder, making sure it's done as current user (not root)
+            mkdir -p foo #{config[:root_path]}/modules
+            # Invoke the created current.ps1 file using pwsh
+            #{pwsh_cmd} -f current.ps1
+          BASH
 
           debug(Util.outdent!(myCommand))
           return Util.outdent!(myCommand)
@@ -309,7 +305,7 @@ module Kitchen
       end
 
       def use_local_powershell_modules(script)
-        <<-EOH
+        <<-PSCode
           try {
             if (!$isLinux) {
               Set-ExecutionPolicy Unrestricted -force
@@ -332,11 +328,11 @@ module Kitchen
           }
 
           #{script}
-        EOH
+        PSCode
       end
 
       def install_command_script
-        <<-EOH
+        <<-PSCode
           $PSModPathToPrepend = "#{config[:root_path]}"
 
           Import-Module -ErrorAction Stop PesterUtil
@@ -348,7 +344,7 @@ module Kitchen
           #{install_pester}
           
           #{install_modules_from_gallery.join("\n") unless config[:install_modules].nil?}
-        EOH
+        PSCode
       end
 
       def restart_winrm_service
@@ -434,9 +430,9 @@ module Kitchen
             # Format "Key = Value" enabling recursion
             %{#{pad(depth + 2)}#{ps_hash(k)} = #{ps_hash(v, depth + 2)}}
           end
-            .join(";\n")  # append ;\n to the key/value definitions
+            .join("\n")  # append \n to the key/value definitions
             .insert(0, "@{\n") # prepend @{\n 
-            .insert(-1, "\n#{pad(depth)}}") # append }\n
+            .insert(-1, "\n#{pad(depth)}}\n") # append \n}\n
 
         elsif obj.is_a?(Array)
           array_string = obj.map { |v| ps_hash(v, depth + 4) }.join(",")

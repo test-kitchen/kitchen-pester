@@ -2,7 +2,10 @@
 
 function Install-ModuleFromNuget {
     param (
+        [string]
         $Module,
+
+        [uri]
         $GalleryUrl         = 'https://www.powershellgallery.com/api/v2'
     )
 
@@ -14,11 +17,11 @@ function Install-ModuleFromNuget {
 
     if ((Test-Path $ModuleFolder) -and ($PSVersionTable.PSVersion.Major -lt 5 -or $module.Force)) {
         # Check if available version is correct
-        $ModuleManifest = (Join-Path -Path $ModuleFolder -ChildPath "$($Module.Name).psd1")
+        $ModuleManifest = Join-Path -Path $ModuleFolder -ChildPath "$($Module.Name).psd1"
         if ((Test-Path -Path $ModuleManifest) -and -not $Module.Force) {
             # Import-PowerShellDataFile only exists since 5.1
             $ManifestInfo = Import-LocalizedData -BaseDirectory (Split-Path -Parent -Path $ModuleManifest) -FileName $Module.Name
-            $ModuleVersionNoPreRelease = $Module.Version -replace '-.*',''
+            $ModuleVersionNoPreRelease = $Module.Version -replace '-.*$'
             # Compare the version in manifest with version required without Pre-release
             if ($ManifestInfo.ModuleVersion -eq $ModuleVersionNoPreRelease) {
                 Write-Host "Module $($Module.Name) already installed, skipping."
@@ -35,7 +38,7 @@ function Install-ModuleFromNuget {
     }
     elseif ($PSVersionTable.PSVersion.Major -gt 5) {
         # skip if the version already exists or if force is enabled
-        $ModuleVersionNoPreRelease = $Module.Version -replace '-.*',''
+        $ModuleVersionNoPreRelease = $Module.Version -replace '-.*$'
         $ModuleFolder  = Join-Path -Path $ModuleFolder -ChildPath $ModuleVersionNoPreRelease
         if (-not $Module.Force -and (Test-Path -Path $ModuleFolder)) {
             Write-Verbose -Message "Module already installed."
@@ -48,7 +51,7 @@ function Install-ModuleFromNuget {
     }
 
     $urlSuffix = "/package/$($Module.Name)/$($Module.Version)"
-    $nupkgUrl = $GalleryUrl.TrimEnd('/') + '/' + $urlSuffix.Trim('/')
+    $nupkgUrl = New-Object -TypeName System.Uri -ArgumentList $GalleryUrl, $urlSuffix
     $wc = New-Object 'system.net.webclient'
 
     if ($env:HTTP_PROXY){
@@ -112,7 +115,7 @@ function Set-PSRepo {
         }
     }
     else {
-        Write-Host "Cannot Set PS Repository, command Set or Register for PSRepository or PackageSource not found."
+        throw "Cannot Set PS Repository, command Set or Register for PSRepository or PackageSource not found."
     }
 }
 
