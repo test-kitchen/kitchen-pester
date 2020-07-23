@@ -97,7 +97,7 @@ module Kitchen
       # @return [String] a command string
       def install_command
         # the sandbox has not yet been copied to the SUT.
-        install_command_string = <<-PSCode
+        install_command_string = <<-PS1
           Write-Verbose 'Running Install Command...'
           $modulesToRemove = @(
               if ($#{config[:remove_builtin_powershellget]}) {
@@ -124,7 +124,7 @@ module Kitchen
                 Remove-Item -force -Recurse $_ -ErrorAction SilentlyContinue
               }
           }
-        PSCode
+        PS1
         really_wrap_shell_code(Util.outdent!(install_command_string))
       end
       # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
@@ -182,7 +182,7 @@ module Kitchen
 
       # private
       def run_command_script
-        <<-PSCode
+        <<-PS1
           Import-Module -Name Pester -Force -ErrorAction Stop
 
           $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
@@ -197,7 +197,7 @@ module Kitchen
           $host.SetShouldExit($LASTEXITCODE)
 
           exit $LASTEXITCODE
-        PSCode
+        PS1
       end
 
       def get_powershell_modules_from_nugetapi
@@ -216,14 +216,14 @@ module Kitchen
         info("Bootstrapping environment without PowerShellGet Provider...")
         Array(bootstrap[:modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
-            <<-PSCode
+            <<-PS1
               ${#{powershell_module[:Name]}} = #{ps_hash(powershell_module)}
               Install-ModuleFromNuget -Module ${#{powershell_module[:Name]}} #{gallery_url_param}
-            PSCode
+            PS1
           else
-            <<-PSCode
+            <<-PS1
               Install-ModuleFromNuget -Module @{Name = '#{powershell_module}'} #{gallery_url_param}
-            PSCode
+            PS1
           end
         end
       end
@@ -235,23 +235,23 @@ module Kitchen
         config[:register_repository].each do |psrepo|
           # Using Set-PSRepo from ../../*/*/*/PesterUtil.psm1
           debug("Command to set PSRepo #{psrepo[:Name]}.")
-          <<-PSCode
+          <<-PS1
             ${#{psrepo[:Name]}} = #{ps_hash(psrepo)}
             Set-PSRepo -Repository ${#{psrepo[:Name]}}
-          PSCode
+          PS1
         end
       end
 
       def install_pester
         return if config[:use_local_pester_module]
         pester_install_params = config[:pester_install] || {}
-        <<-PSCode
+        <<-PS1
           Write-Host "Installing Pester..."
           $InstallPesterParams = #{ps_hash(pester_install_params)}
           $InstallPesterParams['Name'] = 'Pester'
           Install-module @InstallPesterParams
           Write-Host 'Pester Installed.'
-        PSCode
+        PS1
       end
 
       def install_modules_from_gallery
@@ -261,18 +261,18 @@ module Kitchen
             # Sanitize variable name so that $powershell-yaml becomes $powershell_yaml
             module_name = powershell_module[:Name].gsub(/[\W]/, "_")
             # so we can splat that variable to install module
-            <<-PSCode
+            <<-PS1
               $#{module_name} = #{ps_hash(powershell_module)}
               Write-host -noNewline 'Instaling #{module_name}'
               Install-Module @#{module_name}
               Write-host '... done.'
-            PSCode
+            PS1
           else
-            <<-PSCode
+            <<-PS1
               Write-host -noNewline 'Installing #{powershell_module} ...'
               Install-Module -Name '#{powershell_module}'
               Write-host '... done.'
-            PSCode
+            PS1
           end
         end
       end
@@ -306,7 +306,7 @@ module Kitchen
       end
 
       def use_local_powershell_modules(script)
-        <<-PSCode
+        <<-PS1
           try {
             if (!$isLinux) {
               Set-ExecutionPolicy Unrestricted -force
@@ -329,11 +329,11 @@ module Kitchen
           }
 
           #{script}
-        PSCode
+        PS1
       end
 
       def install_command_script
-        <<-PSCode
+        <<-PS1
           $PSModPathToPrepend = "#{config[:root_path]}"
 
           Import-Module -ErrorAction Stop PesterUtil
@@ -345,7 +345,7 @@ module Kitchen
           #{install_pester}
           
           #{install_modules_from_gallery.join("\n") unless config[:install_modules].nil?}
-        PSCode
+        PS1
       end
 
       def restart_winrm_service
