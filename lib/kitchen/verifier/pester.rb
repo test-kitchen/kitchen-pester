@@ -99,15 +99,16 @@ module Kitchen
         # the sandbox has not yet been copied to the SUT.
         install_command_string = <<-PSCode
           Write-Verbose 'Running Install Command...'
-          $modulesToRemove = @()
-          if ($#{config[:remove_builtin_powershellget]}) {
-            $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PackageManagement'; RequiredVersion = '1.0.0.1'}
-            $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PowerShellGet'; RequiredVersion = '1.0.0.1'}
-          }
+          $modulesToRemove = @(
+              if ($#{config[:remove_builtin_powershellget]}) {
+                  Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PackageManagement'; RequiredVersion = '1.0.0.1'}
+                  Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'PowerShellGet'; RequiredVersion = '1.0.0.1'}
+              }
 
-          if ($#{config[:remove_builtin_pester]}) {
-            $modulesToRemove += Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'Pester'; RequiredVersion = '3.4.0'}
-          }
+              if ($#{config[:remove_builtin_pester]}) {
+                  Get-module -ListAvailable -FullyQualifiedName @{ModuleName = 'Pester'; RequiredVersion = '3.4.0'}
+              }
+          )
 
           if($modulesToRemove.ModuleBase.count -le 0) {
             # for PS7 on linux  
