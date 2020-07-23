@@ -38,11 +38,15 @@ module Kitchen
       default_config :remove_builtin_pester, true
       default_config :use_local_pester_module, false
       default_config :bootstrap, {
-        :repository_url => "https://www.powershellgallery.com/api/v2",
-        :modules => []
+        repository_url: "https://www.powershellgallery.com/api/v2",
+        modules: [],
       }
       default_config :register_repository, []
-      default_config :pester_install, { "SkipPublisherCheck" => true, "Force" => true, "ErrorAction" => "Stop" }
+      default_config :pester_install, {
+        SkipPublisherCheck: true,
+        Force: true,
+        ErrorAction: "Stop",
+      }
       default_config :install_modules, []
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
       default_config :copy_folders, []
@@ -205,10 +209,10 @@ module Kitchen
         bootstrap = config[:bootstrap]
         # if the repository url is set, use that as parameter to Install-ModuleFromNuget. Default is the PSGallery url
         repository_url = bootstrap[:repository_url]
-        gallery_url_param = if repository_url
-          "-GalleryUrl '#{repository_url}'"
+        if repository_url
+          gallery_url_param = "-GalleryUrl '#{repository_url}'"
         else
-          ""
+          gallery_url_param = ""
         end
 
         info("Bootstrapping environment without PowerShellGet Provider...")
@@ -228,6 +232,7 @@ module Kitchen
 
       def register_psrepository
         return if config[:register_repository].nil?
+        
         "Write-Host 'Registering PSRepositories..."
         info("Registering a new PowerShellGet Repository")
         config[:register_repository].each do |psrepo|
@@ -285,7 +290,7 @@ module Kitchen
             pwsh_cmd = "pwsh"
           end
 
-          myCommand = <<-BASH
+          my_command = <<-BASH
             echo "Running as '$(whoami)'"
             # Send the bash heredoc 'EOF' to the file current.ps1 using the tool cat
             cat << 'EOF' > current.ps1
@@ -298,8 +303,8 @@ module Kitchen
             #{pwsh_cmd} -f current.ps1
           BASH
 
-          debug(Util.outdent!(myCommand))
-          return Util.outdent!(myCommand)
+          debug(Util.outdent!(my_command))
+          Util.outdent!(my_command)
         end
       end
 
@@ -347,7 +352,7 @@ module Kitchen
       end
 
       def restart_winrm_service
-        return if !verifier.windows_os?
+        return unless verifier.windows_os?
 
         cmd = "schtasks /Create /TN restart_winrm /TR " \
               '"powershell -Command Restart-Service winrm" ' \
@@ -438,7 +443,7 @@ module Kitchen
             # Format "Key = Value" enabling recursion
             %{#{pad(depth + 2)}#{ps_hash(k)} = #{ps_hash(v, depth + 2)}}
           end
-            .join("\n")  # append \n to the key/value definitions
+            .join("\n") # append \n to the key/value definitions
             .insert(0, "@{\n") # prepend @{\n 
             .insert(-1, "\n#{pad(depth)}}\n") # append \n}\n
 
@@ -461,7 +466,7 @@ module Kitchen
 
       # copy files into the 'modules' folder of the sandbox,
       # so that copied folders can be discovered with the updated $Env:PSModulePath.
-      # 
+      #
       # @api private
       def prepare_copy_folders
         return if config[:copy_folders].nil?
