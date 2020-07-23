@@ -237,7 +237,7 @@ module Kitchen
       # @api private
       def register_psrepository
         return if config[:register_repository].nil?
-      
+
         info("Registering a new PowerShellGet Repository")
         Array(config[:register_repository]).map do |psrepo|
           # Using Set-PSRepo from ../../*/*/*/PesterUtil.psm1
@@ -500,7 +500,7 @@ module Kitchen
 
         all_directory_content
       end
-     
+
       # Copies all test suite files into the suites directory in the sandbox.
       #
       # @api private
