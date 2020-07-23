@@ -252,6 +252,7 @@ module Kitchen
 
       def install_pester
         return if config[:use_local_pester_module]
+
         pester_install_params = config[:pester_install] || {}
         <<-PS1
           Write-Host "Installing Pester..."
@@ -475,6 +476,7 @@ module Kitchen
       # @api private
       def prepare_copy_folders
         return if config[:copy_folders].nil?
+
         info("Preparing to copy specified folders to #{sandbox_module_path}.")
         kitchen_root_path = config[:kitchen_root]
         config[:copy_folders].each do |folder|
@@ -526,7 +528,7 @@ module Kitchen
             debug("Folder '#{destination}' created.")
           end
           FileUtils.mkdir_p(File.join(destination, "__bugfix"))
-          # folderToCreate = File.basename(src_to_validate)
+          # folder_to_create = File.basename(src_to_validate)
           FileUtils.cp_r(src_to_validate, destination, preserve: true)
         else
           info("The modules path #{src_to_validate} was not found. Not moving to #{destination}.")
