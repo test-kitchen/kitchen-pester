@@ -238,12 +238,12 @@ module Kitchen
       def register_psrepository
         return if config[:register_repository].nil?
       
-        "Write-Host 'Registering PSRepositories..."
         info("Registering a new PowerShellGet Repository")
-        config[:register_repository].each do |psrepo|
+        Array(config[:register_repository]).map do |psrepo|
           # Using Set-PSRepo from ../../*/*/*/PesterUtil.psm1
           debug("Command to set PSRepo #{psrepo[:Name]}.")
           <<-PS1
+            Write-Host 'Registering psrepo #{psrepo[:Name]}...'
             ${#{psrepo[:Name]}} = #{ps_hash(psrepo)}
             Set-PSRepo -Repository ${#{psrepo[:Name]}}
           PS1
@@ -481,8 +481,8 @@ module Kitchen
         kitchen_root_path = config[:kitchen_root]
         config[:copy_folders].each do |folder|
           debug("copying #{folder}")
-          # folder_to_copy = File.join(kitchen_root_path, folder)
-          copy_if_dir_exists(folder, sandbox_module_path)
+          folder_to_copy = File.join(kitchen_root_path, folder)
+          copy_if_dir_exists(folder_to_copy, sandbox_module_path)
         end
       end
 
