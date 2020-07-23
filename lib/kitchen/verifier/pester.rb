@@ -230,9 +230,14 @@ module Kitchen
         end
       end
 
+      # Returns the string command to set a PS Repository
+      # for each PSRepo configured.
+      #
+      # @return [Array<String>] array of suite files
+      # @api private
       def register_psrepository
         return if config[:register_repository].nil?
-        
+      
         "Write-Host 'Registering PSRepositories..."
         info("Registering a new PowerShellGet Repository")
         config[:register_repository].each do |psrepo|
@@ -259,6 +264,7 @@ module Kitchen
 
       def install_modules_from_gallery
         return if config[:install_modules].nil?
+
         Array(config[:install_modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
             # Sanitize variable name so that $powershell-yaml becomes $powershell_yaml
@@ -279,7 +285,7 @@ module Kitchen
           end
         end
       end
-      
+
       def really_wrap_shell_code(code)
         if windows_os?
           wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
@@ -366,9 +372,8 @@ module Kitchen
 
       def download_test_files(state)
         return if config[:downloads].nil?
-        
-        info("Downloading test result files from #{instance.to_str}")
 
+        info("Downloading test result files from #{instance.to_str}")
         instance.transport.connection(state) do |conn|
           config[:downloads].to_h.each do |remotes, local|
             debug("Downloading #{Array(remotes).join(", ")} to #{local}")
@@ -444,7 +449,7 @@ module Kitchen
             %{#{pad(depth + 2)}#{ps_hash(k)} = #{ps_hash(v, depth + 2)}}
           end
             .join("\n") # append \n to the key/value definitions
-            .insert(0, "@{\n") # prepend @{\n 
+            .insert(0, "@{\n") # prepend @{\n
             .insert(-1, "\n#{pad(depth)}}\n") # append \n}\n
 
         elsif obj.is_a?(Array)
@@ -461,7 +466,7 @@ module Kitchen
       #
       # @api private
       def sandbox_module_path
-        return File.join(sandbox_path, "modules")
+        File.join(sandbox_path, "modules")
       end
 
       # copy files into the 'modules' folder of the sandbox,
@@ -474,7 +479,7 @@ module Kitchen
         kitchen_root_path = config[:kitchen_root]
         config[:copy_folders].each do |folder|
           debug("copying #{folder}")
-          folder_to_copy = File.join(kitchen_root_path, folder)
+          # folder_to_copy = File.join(kitchen_root_path, folder)
           copy_if_dir_exists(folder, sandbox_module_path)
         end
       end
@@ -491,7 +496,7 @@ module Kitchen
         nested_directory_content = Dir.glob(File.join(path, "*/**/*"))
         all_directory_content = [base_directory_content, nested_directory_content].flatten
 
-        return all_directory_content
+        all_directory_content
       end
      
       # Copies all test suite files into the suites directory in the sandbox.
@@ -520,8 +525,8 @@ module Kitchen
             FileUtils.mkdir_p(destination)
             debug("Folder '#{destination}' created.")
           end
-          FileUtils.mkdir_p(File.join(destination, '__bugfix'))
-          folderToCreate = File.basename(src_to_validate)
+          FileUtils.mkdir_p(File.join(destination, "__bugfix"))
+          # folderToCreate = File.basename(src_to_validate)
           FileUtils.cp_r(src_to_validate, destination, preserve: true)
         else
           info("The modules path #{src_to_validate} was not found. Not moving to #{destination}.")
