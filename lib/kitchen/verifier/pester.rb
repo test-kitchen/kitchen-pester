@@ -156,7 +156,6 @@ module Kitchen
       #
       # @return [String] a command string
       def run_command
-
         really_wrap_shell_code(run_command_script)
       end
 
@@ -234,6 +233,7 @@ module Kitchen
         "Write-Host 'Registering PSRepositories..."
         info("Registering a new PowerShellGet Repository")
         config[:register_repository].each do |psrepo|
+          # Using Set-PSRepo from ../../*/*/*/PesterUtil.psm1
           debug("Command to set PSRepo #{psrepo[:Name]}.")
           <<-PSCode
             ${#{psrepo[:Name]}} = #{ps_hash(psrepo)}
@@ -386,10 +386,19 @@ module Kitchen
         @suite_test_folder ||= File.join(test_folder, config[:suite_name])
       end
 
+      # Returns the current file's parent folder's full path.
+      #
+      # @return [string]
+      # @api private
       def script_root
         @script_root ||= File.dirname(__FILE__)
       end
 
+      # Returns the absolute path of the Supporting PS module to
+      # be copied to the SUT via the Sandbox.
+      #
+      # @return [string]
+      # @api private
       def support_psmodule_folder
         @support_psmodule_folder ||= Pathname.new(File.join(script_root, "../../support/modules/PesterUtil")).cleanpath
       end
@@ -419,7 +428,7 @@ module Kitchen
         end
       end
 
-      # Creates a PowerShell hashtable from an ruby map.
+      # Creates a PowerShell hashtable from a ruby map.
       # The only types supported for now are hash, string and Boolean.
       #
       # @api private
@@ -444,10 +453,18 @@ module Kitchen
         end
       end
 
+      # returns the path of the modules subfolder
+      # in the sandbox, where PS Modules and folders will be copied to.
+      #
+      # @api private
       def sandbox_module_path
         return File.join(sandbox_path, "modules")
       end
 
+      # copy files into the 'modules' folder of the sandbox,
+      # so that copied folders can be discovered with the updated $Env:PSModulePath.
+      # 
+      # @api private
       def prepare_copy_folders
         return if config[:copy_folders].nil?
         info("Preparing to copy specified folders to #{sandbox_module_path}.")
@@ -459,6 +476,13 @@ module Kitchen
         end
       end
 
+      # returns an array of string
+      # Creates a flat list of files contained in a folder.
+      # This is useful when trying to debug what has been copied to
+      # the sandbox.
+      #
+      # @return [Array<String>] array of files in a folder
+      # @api private
       def list_files(path)
         base_directory_content = Dir.glob(File.join(path, "*"))
         nested_directory_content = Dir.glob(File.join(path, "*/**/*"))
@@ -482,6 +506,10 @@ module Kitchen
         copy_if_dir_exists(support_psmodule_folder, sandbox_module_path)
       end
 
+      # Copies a folder recursively preserving its layers,
+      # mostly used to copy to the sandbox.
+      #
+      # @api private
       def copy_if_dir_exists(src_to_validate, destination)
         if Dir.exist?(src_to_validate)
           debug("Moving #{src_to_validate} to #{destination}")
@@ -497,12 +525,20 @@ module Kitchen
         end
       end
 
+      # returns the absolute path of the folders containing the
+      # test suites, use default i not set.
+      #
+      # @api private
       def test_folder
         return config[:test_base_path] if config[:test_folder].nil?
 
         absolute_test_folder
       end
 
+      # returns the absolute path of the relative folders containing the
+      # test suites, use default i not set.
+      #
+      # @api private
       def absolute_test_folder
         path = (Pathname.new config[:test_folder]).realpath
         integration_path = File.join(path, "integration")
@@ -511,6 +547,10 @@ module Kitchen
         integration_path
       end
 
+      # returns a string of space of the specified depth.
+      # This is used to pad messages or when building PS hashtables.
+      #
+      # @api private
       def pad(depth = 0)
         " " * depth
       end
