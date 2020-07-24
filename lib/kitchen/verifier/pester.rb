@@ -33,7 +33,7 @@ module Kitchen
       plugin_version Kitchen::Verifier::PESTER_VERSION
 
       default_config :restart_winrm, false
-      default_config :test_folder
+      default_config :test_folder, "tests"
       default_config :remove_builtin_powershellget, true
       default_config :remove_builtin_pester, true
       default_config :use_local_pester_module, false
@@ -259,7 +259,7 @@ module Kitchen
               Write-Host -Object "Trusting the PSGallery to install Pester without -Force"
               Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
           }
-          
+
           Write-Host "Installing Pester..."
           $InstallPesterParams = #{ps_hash(pester_install_params)}
           $InstallPesterParams['Name'] = 'Pester'
@@ -541,7 +541,7 @@ module Kitchen
       end
 
       # returns the absolute path of the folders containing the
-      # test suites, use default i not set.
+      # test suites, use default if not set.
       #
       # @api private
       def test_folder
