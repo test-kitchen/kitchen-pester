@@ -255,6 +255,11 @@ module Kitchen
 
         pester_install_params = config[:pester_install] || {}
         <<-PS1
+          if ((Get-PSRepository -Name PSGallery).InstallationPolicy -ne 'Trusted') {
+              Write-Host -Object "Trusting the PSGallery to install Pester without -Force"
+              Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+          }
+          
           Write-Host "Installing Pester..."
           $InstallPesterParams = #{ps_hash(pester_install_params)}
           $InstallPesterParams['Name'] = 'Pester'
