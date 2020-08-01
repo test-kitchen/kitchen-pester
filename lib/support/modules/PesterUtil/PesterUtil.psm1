@@ -6,7 +6,7 @@ function Install-ModuleFromNuget {
         $Module,
 
         [string]
-        $GalleryUrl         = 'https://www.powershellgallery.com/api/v2'
+        $GalleryUrl = 'https://www.powershellgallery.com/api/v2'
     )
 
     $tempPath       = [io.path]::GetTempPath()
