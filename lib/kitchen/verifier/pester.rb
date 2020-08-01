@@ -112,7 +112,7 @@ module Kitchen
               }
           )
 
-          if($modulesToRemove.ModuleBase.count -le 0) {
+          if ($modulesToRemove.ModuleBase.Count -eq 0) {
             # for PS7 on linux  
             return
           }
