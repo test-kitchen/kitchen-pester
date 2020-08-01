@@ -95,6 +95,8 @@ module Kitchen
       # Generates a command string which will install and configure the
       # verifier software on an instance. If no work is required, then `nil`
       # will be returned.
+      # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
+      # so that we can use the PesterUtil.psm1
       #
       # @return [String] a command string
       def install_command
@@ -129,7 +131,6 @@ module Kitchen
         PS1
         really_wrap_shell_code(Util.outdent!(install_command_string))
       end
-      # PowerShellGet & Pester Bootstrap are done in prepare_command (after sandbox is transferred)
 
       # Generates a command string which will perform any data initialization
       # or configuration required after the verifier software is installed
