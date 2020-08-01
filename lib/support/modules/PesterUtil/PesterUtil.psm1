@@ -9,7 +9,7 @@ function Install-ModuleFromNuget {
         $GalleryUrl = 'https://www.powershellgallery.com/api/v2'
     )
 
-    $tempPath       = [io.path]::GetTempPath()
+    $tempPath       = [System.IO.Path]::GetTempPath()
     $zipFileName    = "{0}.{1}.{2}" -f $Module.Name, $Module.Version, 'zip'
     $downloadedZip  = Join-Path -Path $tempPath $zipFileName
     $ModulePath     = Join-Path -Path $PSHome -ChildPath 'Modules'
