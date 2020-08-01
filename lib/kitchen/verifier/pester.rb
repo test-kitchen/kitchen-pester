@@ -299,7 +299,7 @@ module Kitchen
       end
 
       def really_wrap_shell_code(code)
-          windows_os? ? really_wrap_windows_shell_code(code) : really_wrap_posix_shell_code(code)
+        windows_os? ? really_wrap_windows_shell_code(code) : really_wrap_posix_shell_code(code)
       end
 
       def really_wrap_windows_shell_code(code)
