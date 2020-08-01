@@ -335,7 +335,7 @@ module Kitchen
       def use_local_powershell_modules(script)
         <<-PS1
           try {
-            if (!$isLinux) {
+            if (!$IsLinux -and !$IsMacOs) {
               Set-ExecutionPolicy Unrestricted -force
             }
           }
