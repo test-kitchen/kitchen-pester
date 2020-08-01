@@ -284,13 +284,13 @@ module Kitchen
             # so we can splat that variable to install module
             <<-PS1
               $#{module_name} = #{ps_hash(powershell_module)}
-              Write-host -noNewline 'Installing #{module_name}'
+              Write-Host -NoNewline 'Installing #{module_name}'
               Install-Module @#{module_name}
               Write-host '... done.'
             PS1
           else
             <<-PS1
-              Write-host -noNewline 'Installing #{powershell_module} ...'
+              Write-host -NoNewline 'Installing #{powershell_module} ...'
               Install-Module -Name '#{powershell_module}'
               Write-host '... done.'
             PS1
