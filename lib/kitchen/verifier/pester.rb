@@ -208,12 +208,7 @@ module Kitchen
 
         bootstrap = config[:bootstrap]
         # if the repository url is set, use that as parameter to Install-ModuleFromNuget. Default is the PSGallery url
-        repository_url = bootstrap[:repository_url]
-        if repository_url
-          gallery_url_param = "-GalleryUrl '#{repository_url}'"
-        else
-          gallery_url_param = ""
-        end
+        gallery_url_param = repository_url ? "-GalleryUrl '#{repository_url}'" : ""
 
         info("Bootstrapping environment without PowerShellGet Provider...")
         Array(bootstrap[:modules]).map do |powershell_module|
@@ -250,6 +245,11 @@ module Kitchen
         end
       end
 
+      # Returns the string command set the PSGallery as trusted, and
+      # Install Pester from gallery based on the params from Pester_install_params config
+      #
+      # @return <String> command to install Pester Module
+      # @api private
       def install_pester
         return if config[:use_local_pester_module]
 
@@ -261,13 +261,18 @@ module Kitchen
           }
 
           Write-Host "Installing Pester..."
-          $InstallPesterParams = #{ps_hash(pester_install_params)}
-          $InstallPesterParams['Name'] = 'Pester'
-          Install-module @InstallPesterParams
+          $installPesterParams = #{ps_hash(pester_install_params)}
+          $installPesterParams['Name'] = 'Pester'
+          Install-module @installPesterParams
           Write-Host 'Pester Installed.'
         PS1
       end
 
+      # returns a piece of PS scriptblock for each Module to install
+      # from gallery that has been sepcified in install_modules config.
+      #
+      # @return [Array<String>] array of PS commands.
+      # @api private
       def install_modules_from_gallery
         return if config[:install_modules].nil?
 
@@ -278,7 +283,7 @@ module Kitchen
             # so we can splat that variable to install module
             <<-PS1
               $#{module_name} = #{ps_hash(powershell_module)}
-              Write-host -noNewline 'Instaling #{module_name}'
+              Write-host -noNewline 'Installing #{module_name}'
               Install-Module @#{module_name}
               Write-host '... done.'
             PS1
@@ -293,31 +298,37 @@ module Kitchen
       end
 
       def really_wrap_shell_code(code)
-        if windows_os?
-          wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
+          windows_os? ? really_wrap_windows_shell_code(code) : really_wrap_posix_shell_code(code)
+      end
+
+      def really_wrap_windows_shell_code(code)
+        wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
+      end
+
+      # Writing the command to a ps1 file, adding the pwsh shebang
+      # invoke the file
+      def really_wrap_posix_shell_code(code)
+        if config[:sudo]
+          pwsh_cmd = "sudo pwsh"
         else
-          if config[:sudo]
-            pwsh_cmd = "sudo pwsh"
-          else
-            pwsh_cmd = "pwsh"
-          end
-
-          my_command = <<-BASH
-            echo "Running as '$(whoami)'"
-            # Send the bash heredoc 'EOF' to the file current.ps1 using the tool cat
-            cat << 'EOF' > current.ps1
-            #!/usr/bin/env pwsh
-            #{Util.outdent!(use_local_powershell_modules(code))}
-            EOF
-            # create the modules folder, making sure it's done as current user (not root)
-            mkdir -p foo #{config[:root_path]}/modules
-            # Invoke the created current.ps1 file using pwsh
-            #{pwsh_cmd} -f current.ps1
-          BASH
-
-          debug(Util.outdent!(my_command))
-          Util.outdent!(my_command)
+          pwsh_cmd = "pwsh"
         end
+
+        my_command = <<-BASH
+          echo "Running as '$(whoami)'"
+          # Send the bash heredoc 'EOF' to the file current.ps1 using the tool cat
+          cat << 'EOF' > current.ps1
+          #!/usr/bin/env pwsh
+          #{Util.outdent!(use_local_powershell_modules(code))}
+          EOF
+          # create the modules folder, making sure it's done as current user (not root)
+          mkdir -p foo #{config[:root_path]}/modules
+          # Invoke the created current.ps1 file using pwsh
+          #{pwsh_cmd} -f current.ps1
+        BASH
+
+        debug(Util.outdent!(my_command))
+        Util.outdent!(my_command)
       end
 
       def use_local_powershell_modules(script)
@@ -443,7 +454,7 @@ module Kitchen
       end
 
       # Creates a PowerShell hashtable from a ruby map.
-      # The only types supported for now are hash, string and Boolean.
+      # The only types supported for now are hash, array, string and Boolean.
       #
       # @api private
       def ps_hash(obj, depth = 0)
@@ -463,7 +474,8 @@ module Kitchen
           "#{pad(depth)}@(\n#{array_string}\n)"
         else
           # When the object is not a string nor a hash or array, it will be quoted as a string.
-          %{"#{obj}"}
+          # In most cases, PS is smart enough to convert back to the type it needs.
+          obj.to_s
         end
       end
 
@@ -501,9 +513,7 @@ module Kitchen
       def list_files(path)
         base_directory_content = Dir.glob(File.join(path, "*"))
         nested_directory_content = Dir.glob(File.join(path, "*/**/*"))
-        all_directory_content = [base_directory_content, nested_directory_content].flatten
-
-        all_directory_content
+        [base_directory_content, nested_directory_content].flatten
       end
 
       # Copies all test suite files into the suites directory in the sandbox.
@@ -526,18 +536,18 @@ module Kitchen
       #
       # @api private
       def copy_if_dir_exists(src_to_validate, destination)
-        if Dir.exist?(src_to_validate)
-          debug("Moving #{src_to_validate} to #{destination}")
-          unless Dir.exist?(destination)
-            FileUtils.mkdir_p(destination)
-            debug("Folder '#{destination}' created.")
-          end
-          FileUtils.mkdir_p(File.join(destination, "__bugfix"))
-          # folder_to_create = File.basename(src_to_validate)
-          FileUtils.cp_r(src_to_validate, destination, preserve: true)
-        else
+        unless Dir.exist?(src_to_validate)
           info("The modules path #{src_to_validate} was not found. Not moving to #{destination}.")
+          return
         end
+
+        debug("Moving #{src_to_validate} to #{destination}")
+        unless Dir.exist?(destination)
+          FileUtils.mkdir_p(destination)
+          debug("Folder '#{destination}' created.")
+        end
+        FileUtils.mkdir_p(File.join(destination, "__bugfix"))
+        FileUtils.cp_r(src_to_validate, destination, preserve: true)
       end
 
       # returns the absolute path of the folders containing the
@@ -545,9 +555,7 @@ module Kitchen
       #
       # @api private
       def test_folder
-        return config[:test_base_path] if config[:test_folder].nil?
-
-        absolute_test_folder
+        config[:test_folder].nil? ? config[:test_base_path] : absolute_test_folder
       end
 
       # returns the absolute path of the relative folders containing the
@@ -557,9 +565,7 @@ module Kitchen
       def absolute_test_folder
         path = (Pathname.new config[:test_folder]).realpath
         integration_path = File.join(path, "integration")
-        return path unless Dir.exist?(integration_path)
-
-        integration_path
+        Dir.exist?(integration_path) ? integration_path : path
       end
 
       # returns a string of space of the specified depth.
@@ -569,7 +575,6 @@ module Kitchen
       def pad(depth = 0)
         " " * depth
       end
-
     end
   end
 end
