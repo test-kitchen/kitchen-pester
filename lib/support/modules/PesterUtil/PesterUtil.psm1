@@ -69,7 +69,7 @@ function Install-ModuleFromNuget {
 
     Write-Verbose -Message "Downloading Package from $nupkgUrl"
     try {
-        if (test-path $downloadedZip) {
+        if (Test-Path $downloadedZip) {
             Remove-Item -Force -ErrorAction SilentlyContinue -Path $downloadedZip
         }
         $webclient.DownloadFile($nupkgUrl, $downloadedZip)
