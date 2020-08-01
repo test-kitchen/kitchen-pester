@@ -80,7 +80,7 @@ function Install-ModuleFromNuget {
     }
     
     if (-not (Test-Path -Path $downloadedZip)) {
-        Throw "Error trying to download nupkg '$nupkgUrl' to '$downloadedZip'."
+        throw "Error trying to download nupkg '$nupkgUrl' to '$downloadedZip'."
     }
     
     # Test to see if Expand-Archive is available first
