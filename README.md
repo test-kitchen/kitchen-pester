@@ -61,7 +61,7 @@ Allows you to specify a custom path (the default is ./test/[integration/]) for y
 When you specify a folder, it will automatically try to append `/integration` to that path. If it exists, it will use this
 
 * `remove_builtin_powershellget` - bool, default is `true` (v.1.0.0.1)  
-Removes PowerShellGet and PackageManagement v1.0.0.1 are they cause issues with current version of the gallery.
+Removes PowerShellGet and PackageManagement v1.0.0.1 are they cause issues and do not support pre-releases.
 
 * `remove_builtin_pester` - bool, default is `true` (v3.4.0)  
 Remove the Pester module that is built-in Windows (v3.4.0) because upgrading o a later version is painful (SkipPublisherCheck & Force, which makes it slow every time you `kitchen verify`).
