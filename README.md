@@ -32,10 +32,10 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 * `test_folder` - string, default is `./tests/integration/`.
 * `remove_builtin_powershellget` - bool, default is `true`
 * `remove_builtin_pester` - bool, default is `true`
-* `bootstrap` - hash,  default is `{}` (PowershellGet & Package Management)
-* `register_repository` - hash, default is `[]`
+* `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)
+* `register_repository` - array (of maps), default is `[]`
 * `use_local_pester_module` - bool default is `false`
-* `pester_install` - hash, default is
+* `pester_install` - map, default is
   ```ruby
   {
     SkipPublisherCheck: true,
@@ -45,7 +45,6 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
   ```
   (parameters for `Install-Module`)
 * `install_modules` - array, default is `[]`
-* `downloads` - hash, default is  `["./PesterTestResults.xml"] => "./testresults"`
 * `copy_folders` - array, default is `[]`
 * `sudo` - bool, default is `true`. (non-windows only)
 * `downloads`- map[string, string], defaults to `["./PesterTestResults.xml"] => "./testresults"`. 
@@ -66,15 +65,15 @@ Removes PowerShellGet and PackageManagement v1.0.0.1 are they cause issues and d
 * `remove_builtin_pester` - bool, default is `true` (v3.4.0)  
 Remove the Pester module that is built-in Windows (v3.4.0) because upgrading o a later version is painful (SkipPublisherCheck & Force, which makes it slow every time you `kitchen verify`).
 
-* `bootstrap` - hash,  default is `{}` (PowershellGet & Package Management)  
+* `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)  
 Allows to download the PowerShellGet and PackageManagement module without dependency, using the Nuget API URL. Note that it needs to be able to download the nupkg from `$galleryUrl/package/PowerShellGet`, which may not be available with some private feed implementation.
 
-* `register_repository` - array (of hashes), default is `[]`  
+* `register_repository` - array (of maps), default is `[]`  
 Allows you to register PSRepositories to download modules from. Useful when you want to use a private feed.  
-This expects a hash for each repository to register, the values will be splatted to `Register-PSRepository` (or `Set-PSRepository` if it already exists).
+This expects a map for each repository to register, the values will be splatted to `Register-PSRepository` (or `Set-PSRepository` if it already exists).
 
-* `install_modules` - array (of hashes), default is `[]`  
-Array of hashes, that will be splatted to the Install-Module parameters.
+* `install_modules` - array (of maps), default is `[]`  
+Array of maps, that will be splatted to the Install-Module parameters.
 Useful for installing dependencies from a gallery.  
   ```yaml
     install_modules:
@@ -99,7 +98,7 @@ If you are testing a PowerShell module you have built as part of your build proc
 Skip installing pester and just use what's available on the box, or what you have copied with the `copy_folders` options.
 
 
-* `pester_install` - hash, default is
+* `pester_install` - map, default is
   ```ruby
   {
     SkipPublisherCheck: true,
@@ -107,10 +106,8 @@ Skip installing pester and just use what's available on the box, or what you hav
     ErrorAction: "Stop",
   }
   ```
-  Specify parameters for installing Pester before running the tests. The hash will be splatted to the `Install-Module -Name Pester` command.
+  Specify parameters for installing Pester before running the tests. The map will be splatted to the `Install-Module -Name Pester` command.
   You can use this to install from a private gallery for instance.
-
-* `downloads` - hash, default is  `["./PesterTestResults.xml"] => "./testresults"`
 
 * `sudo` - bool, default is `true`. (non-windows only)
 execute all PowerShell calls as sudo. This is useful in some cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
