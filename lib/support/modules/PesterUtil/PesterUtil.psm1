@@ -1,6 +1,7 @@
 [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
 
 function Install-ModuleFromNuget {
+    [CmdletBinding()]
     param (
         [hashtable]
         $Module,
