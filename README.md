@@ -63,7 +63,7 @@ When you specify a folder, it will automatically try to append `/integration` to
 If it exists, it will use this as the root tests directory.
 
 * `remove_builtin_powershellget` - bool, default is `true` (v.1.0.0.1)  
-Removes PowerShellGet and PackageManagement v1.0.0.1 are they cause issues and do not support pre-releases.
+Remove the built-in PowerShellGet and PackageManagement modules on Windows (v1.0.0.1), as they will often cause problems and will be superseded by the bootstrapped versions by default.
 
 * `remove_builtin_pester` - bool, default is `true` (v3.4.0)  
 Remove the Pester module that is built-in Windows (v3.4.0) because upgrading o a later version is painful (SkipPublisherCheck & Force, which makes it slow every time you `kitchen verify`).
