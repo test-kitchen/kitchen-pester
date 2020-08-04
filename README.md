@@ -43,7 +43,7 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
     ErrorAction: "Stop",
   }
   ```
-  (parameters for `Install-Module`)
+  (parameters to be splatted into `Install-Module`)
 * `install_modules` - array, default is `[]`
 * `copy_folders` - array, default is `[]`
 * `sudo` - bool, default is `true`. (non-windows only)
