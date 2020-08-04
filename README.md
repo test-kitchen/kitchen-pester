@@ -112,7 +112,8 @@ Skip installing pester and just use what's available on the box, or what you hav
     ErrorAction: "Stop",
   }
   ```
-  Specify parameters for installing Pester before running the tests. The map will be splatted to the `Install-Module -Name Pester` command.
+Specify parameters for installing Pester before running the tests.
+The map will be splatted to the `Install-Module -Name Pester` command.
 You can use this to install the module from a private gallery, for instance.
 
 * `sudo` - bool, default is `true`. (non-windows only)
