@@ -26,31 +26,7 @@ verifier:
 ```
 This can be a top-level declaration, a per-node declaration, or a per-suite declaration.
 
-### Options
-
-* `restart_winrm` - boolean, default is `false`. (Windows only)
-* `test_folder` - string, default is `./tests/integration/`.
-* `remove_builtin_powershellget` - bool, default is `true`
-* `remove_builtin_pester` - bool, default is `true`
-* `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)
-* `register_repository` - array (of maps), default is `[]`
-* `use_local_pester_module` - bool, default is `false`
-* `pester_install` - map, default is
-  ```ruby
-  {
-    SkipPublisherCheck: true,
-    Force: true,
-    ErrorAction: "Stop",
-  }
-  ```
-  (parameters to be splatted into `Install-Module`)
-* `install_modules` - array, default is `[]`
-* `copy_folders` - array, default is `[]`
-* `sudo` - bool, default is `true`. (non-windows only)
-* `downloads`- map[string[], string], defaults to `["./PesterTestResults.xml"] => "./testresults"`. 
-
-
-## Options explained
+## Options
 
 * `restart_winrm` - boolean, default is `false`. (Windows only)  
 Restarts the winrm service using a scheduled tasks before proceding.
@@ -120,7 +96,7 @@ You can use this to install the module from a private gallery, for instance.
 Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
-* `downloads`- map[string, string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.   
+* `downloads`- map[string[], string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.   
 Files to download from SUT to local system, used to download the pester results locally.
 The key is the remote file or folder, value the local file or folder it should be saved as or in.
 
