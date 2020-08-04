@@ -55,6 +55,13 @@ Note that it needs to be able to download the nupkg from `$galleryUrl/package/Po
 * `register_repository` - array (of maps), default is `[]`  
 Allows you to register PSRepositories to download modules from. Useful when you want to use a private feed.  
 This expects a map for each repository to register, the values will be splatted to `Register-PSRepository` (or `Set-PSRepository` if it already exists).
+  ```yaml
+    register_repository:
+      - Name: MyPrivateNuget
+        SourceLocation: https://mypsrepo.local/api/v2
+        InstallationPolicy: trusted
+        PackageManagementProvider: Nuget
+  ```
 
 * `install_modules` - array (of maps), default is `[]`  
 Array of maps, that will be splatted to the Install-Module parameters.
