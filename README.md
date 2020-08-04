@@ -88,8 +88,9 @@ Useful for installing dependencies from a gallery.
   ```
 
 * `copy_folders` - array, default is `[]`  
-Folders (relative to the current directory or absolute) to copy to the System Under test (SUT). The SUT's `$Env:PSModulePath` will be changed for for the session to prepend the parent folder.
-If you are testing a PowerShell module you have built as part of your build process, this enables you to copy this modules.
+Folders (relative to the current directory or absolute) to copy to the System Under Test (SUT).
+The SUT's `$env:PSModulePath` will have the parent folder prepended for the session.
+If you are testing a PowerShell module you have built as part of your build process, this enables you to copy the module folder directly to the target machine.
   ```yaml
   verifier:
     name: pester
