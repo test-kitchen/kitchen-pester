@@ -146,7 +146,8 @@ Assuming you are using the AzureRM driver and a Ubuntu image, you may need to in
 One way to achieve this is by using Test-Kitchen's lifecycle hooks to install is using the [snap](https://snapcraft.io/powershell) package management.
 
 Then if your tests are written for Pester v4.x, make sure you specify a maximum version in the install.  
-As pwsh comes with a recent version of PowerShellGet, it is not necessary to bootstrap the PowerShell environment. The `Install-Module` command should work out of the box.
+As pwsh comes with a recent version of PowerShellGet, it is not necessary to bootstrap the PowerShell environment.
+The `Install-Module` command should work out of the box.
 
 ```yaml
 driver:
