@@ -538,7 +538,7 @@ module Kitchen
       # @api private
       def copy_if_dir_exists(src_to_validate, destination)
         unless Dir.exist?(src_to_validate)
-          info("The modules path #{src_to_validate} was not found. Not moving to #{destination}.")
+          info("The path #{src_to_validate} was not found. Not copying to #{destination}.")
           return
         end
 
