@@ -116,7 +116,8 @@ Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
 * `downloads`- map[string, string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.   
-Files to download from SUT to local system, used to download the pester results locally. The key is the remote file, value the local file it should be saved as.
+Files to download from SUT to local system, used to download the pester results locally.
+The key is the remote file or folder, value the local file or folder it should be saved as or in.
 
 ---
 
