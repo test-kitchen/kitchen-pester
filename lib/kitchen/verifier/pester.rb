@@ -500,7 +500,7 @@ module Kitchen
         config[:copy_folders].each do |folder|
           debug("copying #{folder}")
           folder_to_copy = File.join(kitchen_root_path, folder)
-          copy_if_dir_exists(folder_to_copy, sandbox_module_path)
+          copy_if_src_exists(folder_to_copy, sandbox_module_path)
         end
       end
 
@@ -523,20 +523,20 @@ module Kitchen
       def prepare_pester_tests
         info("Preparing to copy files from  '#{suite_test_folder}' to the SUT.")
         sandboxed_suites_path = File.join(sandbox_path, "suites")
-        copy_if_dir_exists(suite_test_folder, sandboxed_suites_path)
+        copy_if_src_exists(suite_test_folder, sandboxed_suites_path)
       end
 
       def prepare_supporting_psmodules
         debug("Preparing to copy files from '#{support_psmodule_folder}' to the SUT.")
         sandbox_module_path = File.join(sandbox_path, "modules")
-        copy_if_dir_exists(support_psmodule_folder, sandbox_module_path)
+        copy_if_src_exists(support_psmodule_folder, sandbox_module_path)
       end
 
       # Copies a folder recursively preserving its layers,
       # mostly used to copy to the sandbox.
       #
       # @api private
-      def copy_if_dir_exists(src_to_validate, destination)
+      def copy_if_src_exists(src_to_validate, destination)
         unless Dir.exist?(src_to_validate)
           info("The path #{src_to_validate} was not found. Not copying to #{destination}.")
           return
