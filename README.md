@@ -70,7 +70,8 @@ Remove the Pester module that is built-in on Windows (v3.4.0), because upgrading
 Removing the built-in ensures that the only version in use will be the Pester version specified by the configuration.
 
 * `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)  
-Allows to download the PowerShellGet and PackageManagement module without dependency, using the Nuget API URL. Note that it needs to be able to download the nupkg from `$galleryUrl/package/PowerShellGet`, which may not be available with some private feed implementation.
+Allows kitchen-pester to download the PowerShellGet and PackageManagement module directly from the Nuget API URL.
+Note that it needs to be able to download the nupkg from `$galleryUrl/package/PowerShellGet`, which may not be available with some private feed implementations.
 
 * `register_repository` - array (of maps), default is `[]`  
 Allows you to register PSRepositories to download modules from. Useful when you want to use a private feed.  
