@@ -32,21 +32,23 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 Restarts the winrm service using a scheduled tasks before proceding.
 
 * `test_folder` - string, default is `./tests/integration/`.  
-Allows you to specify a custom path (the default is ./test/[integration/]) for your integration tests.
+Allows you to specify a custom path (the default is ./test/[integration/]) for your integration tests.  
 This can be an absolute path or relative to the root of the folder kitchen is running from on the host machine.
 This path must exist.  
-When you specify a folder, it will automatically try to append `/integration` to that path.
-If it exists, it will use this as the root tests directory.
+When you specify a folder, it will automatically try to append `/integration` to that path.  
+If it exists, it will use this as the root tests directory.  
+If it doesn't, it will use the `test_folder`.  
+If you have a `helpers` folders under `test_folder` (i.e. `./tests/helpers`), those will be copied to the SUT for every test suite.
 
 * `remove_builtin_powershellget` - bool, default is `true` (v.1.0.0.1)  
 Remove the built-in PowerShellGet and PackageManagement modules on Windows (v1.0.0.1), as they will often cause problems and will be superseded by the bootstrapped versions by default.
 
 * `remove_builtin_pester` - bool, default is `true` (v3.4.0)  
-Remove the Pester module that is built-in on Windows (v3.4.0), because upgrading to a later version is awkward if this is not first removed (requires both `-SkipPublisherCheck` & `-Force`, which makes it slow every time you `kitchen verify`).
+Remove the Pester module that is built-in on Windows (v3.4.0), because upgrading to a later version is awkward if this is not first removed (requires both `-SkipPublisherCheck` & `-Force`, which makes it slow every time you `kitchen verify`).  
 Removing the built-in ensures that the only version in use will be the Pester version specified by the configuration.
 
 * `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)  
-Allows kitchen-pester to download the PowerShellGet and PackageManagement module directly from the Nuget API URL.
+Allows kitchen-pester to download the PowerShellGet and PackageManagement module directly from the Nuget API URL.  
 Note that it needs to be able to download the nupkg from `$galleryUrl/package/PowerShellGet`, which may not be available with some private feed implementations.
 
 * `register_repository` - array (of maps), default is `[]`  
@@ -64,8 +66,8 @@ Useful for installing dependencies from a gallery.
   ```
 
 * `copy_folders` - array, default is `[]`  
-Folders (relative to the current directory or absolute) to copy to the System Under Test (SUT).
-The SUT's `$env:PSModulePath` will have the parent folder prepended for the session.
+Folders (relative to the current directory or absolute) to copy to the System Under Test (SUT).  
+The SUT's `$env:PSModulePath` will have the parent folder prepended for the session.  
 If you are testing a PowerShell module you have built as part of your build process, this enables you to copy the module folder directly to the target machine.
   ```yaml
   verifier:
