@@ -96,9 +96,8 @@ You can use this to install the module from a private gallery, for instance.
 Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
-* `downloads`- map[string[], string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.   
-Files to download from SUT to local system, used to download the pester results locally.
-The key is the remote file or folder, value the local file or folder it should be saved as or in.
+* `downloads`- map[string[], string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.  
+Files to download from SUT to local system, used to download the pester results locally. The key is the remote files or directories, value the directory it should be saved to.
 
 ---
 
