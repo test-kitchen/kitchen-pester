@@ -66,7 +66,8 @@ If it exists, it will use this as the root tests directory.
 Remove the built-in PowerShellGet and PackageManagement modules on Windows (v1.0.0.1), as they will often cause problems and will be superseded by the bootstrapped versions by default.
 
 * `remove_builtin_pester` - bool, default is `true` (v3.4.0)  
-Remove the Pester module that is built-in Windows (v3.4.0) because upgrading o a later version is painful (SkipPublisherCheck & Force, which makes it slow every time you `kitchen verify`).
+Remove the Pester module that is built-in on Windows (v3.4.0), because upgrading to a later version is awkward if this is not first removed (requires both `-SkipPublisherCheck` & `-Force`, which makes it slow every time you `kitchen verify`).
+Removing the built-in ensures that the only version in use will be the Pester version specified by the configuration.
 
 * `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)  
 Allows to download the PowerShellGet and PackageManagement module without dependency, using the Nuget API URL. Note that it needs to be able to download the nupkg from `$galleryUrl/package/PowerShellGet`, which may not be available with some private feed implementation.
