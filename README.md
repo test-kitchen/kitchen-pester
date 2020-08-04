@@ -47,7 +47,7 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 * `install_modules` - array, default is `[]`
 * `copy_folders` - array, default is `[]`
 * `sudo` - bool, default is `true`. (non-windows only)
-* `downloads`- map[string, string], defaults to `["./PesterTestResults.xml"] => "./testresults"`. 
+* `downloads`- map[string[], string], defaults to `["./PesterTestResults.xml"] => "./testresults"`. 
 
 
 ## Options explained
