@@ -110,7 +110,8 @@ Skip installing pester and just use what's available on the box, or what you hav
   You can use this to install from a private gallery for instance.
 
 * `sudo` - bool, default is `true`. (non-windows only)
-execute all PowerShell calls as sudo. This is useful in some cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
+Execute all PowerShell calls as sudo.
+This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
 * `downloads`- map[string, string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.   
 Files to download from SUT to local system, used to download the pester results locally. The key is the remote file, value the local file it should be saved as.
