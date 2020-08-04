@@ -59,7 +59,8 @@ Restarts the winrm service using a scheduled tasks before proceding.
 Allows you to specify a custom path (the default is ./test/[integration/]) for your integration tests.
 This can be an absolute path or relative to the root of the folder kitchen is running from on the host machine.
 This path must exist.  
-When you specify a folder, it will automatically try to append `/integration` to that path. If it exists, it will use this
+When you specify a folder, it will automatically try to append `/integration` to that path.
+If it exists, it will use this as the root tests directory.
 
 * `remove_builtin_powershellget` - bool, default is `true` (v.1.0.0.1)  
 Removes PowerShellGet and PackageManagement v1.0.0.1 are they cause issues and do not support pre-releases.
