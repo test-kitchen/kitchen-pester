@@ -34,7 +34,7 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 * `remove_builtin_pester` - bool, default is `true`
 * `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)
 * `register_repository` - array (of maps), default is `[]`
-* `use_local_pester_module` - bool default is `false`
+* `use_local_pester_module` - bool, default is `false`
 * `pester_install` - map, default is
   ```ruby
   {
