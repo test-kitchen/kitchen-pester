@@ -29,7 +29,8 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 ## Options
 
 * `restart_winrm` - boolean, default is `false`. (Windows only)  
-Restarts the winrm service using a scheduled tasks before proceding.
+Restarts the winrm service using a scheduled tasks before proceding.  
+This setting is ignored on non-windows OSes.
 
 * `test_folder` - string, default is `./tests/integration/`.  
 Allows you to specify a custom path (the default is ./test/[integration/]) for your integration tests.  
