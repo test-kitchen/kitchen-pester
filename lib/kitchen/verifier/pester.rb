@@ -50,7 +50,7 @@ module Kitchen
       default_config :install_modules, []
       default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
       default_config :copy_folders, []
-      default_config :sudo, true
+      default_config :sudo, false
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -209,7 +209,7 @@ module Kitchen
 
         bootstrap = config[:bootstrap]
         # if the repository url is set, use that as parameter to Install-ModuleFromNuget. Default is the PSGallery url
-        gallery_url_param = repository_url ? "-GalleryUrl '#{repository_url}'" : ""
+        gallery_url_param = bootstrap[:repository_url] ? "-GalleryUrl '#{bootstrap[:repository_url]}'" : ""
 
         info("Bootstrapping environment without PowerShellGet Provider...")
         Array(bootstrap[:modules]).map do |powershell_module|
@@ -476,7 +476,7 @@ module Kitchen
         else
           # When the object is not a string nor a hash or array, it will be quoted as a string.
           # In most cases, PS is smart enough to convert back to the type it needs.
-          obj.to_s
+          "'"+obj.to_s+"'"
         end
       end
 
