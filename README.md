@@ -86,7 +86,7 @@ If you are testing a PowerShell module you have built as part of your build proc
       MaximumVersion: '4.99.999'
   ```
 
-* `use_local_pester_module` - bool default is `false`  
+* `skip_pester_install` - bool default is `false`  
 Skip installing pester and just use what's available on the box, or what you have copied with the `copy_folders` options.
 
 
@@ -102,7 +102,7 @@ Specify parameters for installing Pester before running the tests.
 The map will be splatted to the `Install-Module -Name Pester` command.
 You can use this to install the module from a private gallery, for instance.
 
-* `sudo` - bool, default is `true`. (non-windows only)
+* `sudo` - bool, default is `false`. (non-windows only)
 Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
@@ -124,10 +124,10 @@ verifier:
   pester_install:
     MaximumVersion: '4.99.999'
   bootstrap: # installs modules from nuget feed by download and unzip.
-        repository_url: "https://www.powershellgallery.com/api/v2"
-        modules:
-          - PackageManagement
-          - PowerShellGet
+    repository_url: "https://www.powershellgallery.com/api/v2"
+    modules:
+      - PackageManagement
+      - PowerShellGet
 ```
 
 ### Default Azure Ubuntu 18.04 Install
