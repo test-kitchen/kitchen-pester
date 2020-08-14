@@ -36,7 +36,7 @@ module Kitchen
       default_config :test_folder, "tests"
       default_config :remove_builtin_powershellget, true
       default_config :remove_builtin_pester, true
-      default_config :use_local_pester_module, false
+      default_config :skip_pester_install, false
       default_config :bootstrap, {
         repository_url: "https://www.powershellgallery.com/api/v2",
         modules: [],
@@ -252,7 +252,7 @@ module Kitchen
       # @return <String> command to install Pester Module
       # @api private
       def install_pester
-        return if config[:use_local_pester_module]
+        return if config[:skip_pester_install]
 
         pester_install_params = config[:pester_install] || {}
         <<-PS1
