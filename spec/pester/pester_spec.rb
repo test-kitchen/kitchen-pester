@@ -14,13 +14,13 @@ class MockPester < Kitchen::Verifier::Pester
   end
 end
 
-describe "when sandboxifying a path" do
-  let(:sandboxifiedPath) do
-    pester = MockPester.new
-    pester.sandboxify_path("C:/LOWERcasedpath/Pester/tests/test")
-  end
+# describe "when sandboxifying a path" do
+#   let(:sandboxifiedPath) do
+#     pester = MockPester.new
+#     pester.sandboxify_path("C:/LOWERcasedpath/Pester/tests/test")
+#   end
 
-  it "should ignore case" do
-    _(sandboxifiedPath).must_equal "C:/users/jdoe/temp/kitchen-temp/suites/test"
-  end
-end
+#   it "should ignore case" do
+#     _(sandboxifiedPath).must_equal "C:/users/jdoe/temp/kitchen-temp/suites/test"
+#   end
+# end
