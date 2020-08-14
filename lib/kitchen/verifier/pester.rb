@@ -476,7 +476,7 @@ module Kitchen
         else
           # When the object is not a string nor a hash or array, it will be quoted as a string.
           # In most cases, PS is smart enough to convert back to the type it needs.
-          "'"+obj.to_s+"'"
+          "'" + obj.to_s + "'"
         end
       end
 
