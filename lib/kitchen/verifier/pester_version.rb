@@ -1,5 +1,5 @@
 module Kitchen
   module Verifier
-    PESTER_VERSION = "0.12.2".freeze
+    PESTER_VERSION = "1.0.0".freeze
   end
 end
