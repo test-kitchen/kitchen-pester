@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require "fileutils"
-require "pathname"
+require "fileutils" unless defined?(FileUtils)
+require "pathname" unless defined?(Pathname)
 require "kitchen/util"
 require "kitchen/verifier/base"
 require "kitchen/version"
-require "base64"
+require "base64" unless defined?(Base64)
 require_relative "pester_version"
 
 module Kitchen
