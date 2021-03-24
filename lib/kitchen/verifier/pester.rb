@@ -115,7 +115,7 @@ module Kitchen
           )
 
           if ($modulesToRemove.ModuleBase.Count -eq 0) {
-            # for PS7 on linux  
+            # for PS7 on linux
             return
           }
 
@@ -350,7 +350,7 @@ module Kitchen
             # if you create this folder now un Linux, it will run as root (via sudo).
             $null = New-Item -Path $PSModPathToPrepend -Force -ItemType Directory
           }
-          
+
           if ($Env:PSModulePath.Split([io.path]::PathSeparator) -notcontains $PSModPathToPrepend) {
             $env:PSModulePath   = @($PSModPathToPrepend, $env:PSModulePath) -Join [io.path]::PathSeparator
           }
