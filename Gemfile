@@ -11,7 +11,7 @@ group :integration do
 end
 
 group :changelog do
-  gem "github_changelog_generator", "1.16.1"
+  gem "github_changelog_generator", "1.16.2"
 end
 
 group :debug do
