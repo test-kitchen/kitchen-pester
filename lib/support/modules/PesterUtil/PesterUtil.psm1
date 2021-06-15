@@ -106,8 +106,9 @@ function Set-PSRepo {
         [Parameter(Mandatory)]
         $Repository
     )
+    
     if (-not (Get-Command Get-PSRepository) -and (Get-Command Get-PackageSource)) {
-        # Old version of PSGet do not have a *-PSrepository but have *-PackageSource instead.
+        # Old versions of PSGet do not have a *-PSrepository but have *-PackageSource instead.
         if (Get-PackageSource -Name $Repository.Name)  {
             Set-PackageSource @Repository
         }

@@ -47,10 +47,25 @@ module Kitchen
         Force: true,
         ErrorAction: "Stop",
       }
+      default_config :pester_configuration, {
+        run: {
+          path: ".",
+          PassThru: true,
+        },
+        TestResult: {
+          Enabled: true,
+          OutputPath: "PesterTestResults.xml",
+          TestSuiteName: "",
+        },
+        Output: {
+          Verbosity: "Detailed",
+        }
+      }
       default_config :install_modules, []
-      default_config :downloads, ["./PesterTestResults.xml"] => "./testresults"
+      default_config :downloads, {"./PesterTestResults.xml" => "./testresults/"}
       default_config :copy_folders, []
       default_config :sudo, false
+      default_config :shell, nil
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -150,6 +165,7 @@ module Kitchen
       # @return [String] a command string
       def prepare_command
         info("Preparing the SUT and Pester dependencies...")
+        resolve_downloads_paths!
         really_wrap_shell_code(install_command_script)
       end
 
@@ -159,7 +175,42 @@ module Kitchen
       #
       # @return [String] a command string
       def run_command
-        really_wrap_shell_code(run_command_script)
+        really_wrap_shell_code(invoke_pester_scriptblock)
+      end
+
+      # Resolves the remote Downloads path from the verifier root path, 
+      # unless they're absolute path (starts with / or C:\)
+      # This updates the config[:downloads], nothing (nil) is returned.
+      #
+      # @return [nil] updates config downloads
+      def resolve_downloads_paths!
+        info("Resolving Downloads path from config.")
+        
+        config[:downloads] = config[:downloads]
+          .map do |source, destination|
+            source = source.to_s
+            info("  resolving remote source's absolute path.")
+            if !source.match?('^/|^[a-zA-Z]:[\\/]') # is Absolute?
+              info("  '#{source}' is a relative path, resolving to: #{File.join(config[:root_path], source)}")
+              source = File.join(config[:root_path], source.to_s).to_s
+            end
+
+            if destination.match?('\\$|/$') # is Folder (ends with / or \)
+              destination = File.join(destination, File.basename(source)).to_s 
+            end
+            info("  Destination: #{destination}")
+            if !File.directory?(File.dirname(destination))
+              FileUtils.mkdir_p(File.dirname(destination))
+            else
+              info("  Directory #{File.dirname(destination)} seem to exist.")
+            end
+
+            [
+              source,
+              destination
+            ]
+          end
+        nil # make sure we do not return anything
       end
 
       # Download functionality was added to the base verifier behavior after
@@ -168,7 +219,9 @@ module Kitchen
         def call(state)
           super
         ensure
-          download_test_files(state) unless config[:download].nil?
+          info("Ensure download test files.")
+          download_test_files(state) unless config[:downloads].nil?
+          info('Download complete.')
         end
       else
         def call(state)
@@ -176,25 +229,87 @@ module Kitchen
         rescue
           # If the verifier reports failure, we need to download the files ourselves.
           # Test Kitchen's base verifier doesn't have the download in an `ensure` block.
-          download_test_files(state) unless config[:download].nil?
-
+          info("Rescue to download test files.")
+          download_test_files(state) unless config[:downloads].nil?
           # Rethrow original exception, we still want to register the failure.
           raise
         end
       end
 
       # private
-      def run_command_script
+      def invoke_pester_scriptblock
         <<-PS1
-          Import-Module -Name Pester -Force -ErrorAction Stop
+          $PesterModule = Import-Module -Name Pester -Force -ErrorAction Stop -PassThru
 
           $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
           $OutputFilePath = Join-Path "#{config[:root_path]}" -ChildPath 'PesterTestResults.xml'
 
-          $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
+          if ($PesterModule.Version.Major -le 4)
+          {
+            Write-Host -Object "Invoke Pester with v$($PesterModule.Version) Options"
+            $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
+            $defaultPesterParameters = @{
+                Script = $TestPath
+                OutputFile = $OutputFilePath
+                OutputFormat = 'NUnitXml'
+                PassThru = $true
+                PesterOption = $options
+            }
 
-          $result = Invoke-Pester -Script $TestPath -OutputFile $OutputFilePath -OutputFormat NUnitXml -PesterOption $options -PassThru
-          $result | Export-CliXml -Path (Join-Path -Path $TestPath -ChildPath 'result.xml')
+            $pesterCmd = Get-Command -Name 'Invoke-Pester'
+            $pesterConfig = #{ps_hash(config[:pester_configuration])}
+            $invokePesterParams = @{}
+
+            foreach ($paramName in $pesterCmd.Parameters.Keys)
+            {
+                $paramValue = $pesterConfig.($paramName)
+
+                if ($paramValue) {
+                    Write-Host -Object "Using $paramName from Yaml config."
+                    $invokePesterParams[$paramName] = $paramValue
+                }
+                elseif ($defaultPesterParameters.ContainsKey($paramName))
+                {
+                    Write-Host -Object "Using $paramName from Defaults: $($defaultPesterParameters[$paramName])."
+                    $invokePesterParams[$paramName] = $defaultPesterParameters[$paramName]
+                }
+            }
+
+            $result = Invoke-Pester @invokePesterParams
+          }
+          else
+          {
+            Write-Host -Object "Invoke Pester with v$($PesterModule.Version) Configuration."
+            $pesterConfigHash = #{ps_hash(config[:pester_configuration])}
+
+            if (-not $pesterConfigHash.ContainsKey('run')) {
+                $pesterConfigHash['run'] = @{}
+            }
+
+            if (-not $pesterConfigHash.ContainsKey('TestResult')) {
+                $pesterConfigHash['TestResult'] = @{}
+            }
+
+            if (-not $pesterConfigHash.run.path) {
+                $pesterConfigHash['run']['path'] = $TestPath
+            }
+
+            if (-not $pesterConfigHash.TestResult.TestSuiteName) {
+                $pesterConfigHash['TestResult']['TestSuiteName'] = 'Pester - #{instance.to_str}'
+            }
+
+            if (-not $pesterConfigHash.TestResult.OutputPath) {
+                $pesterConfigHash['TestResult']['OutputPath'] = $OutputFilePath
+            }
+
+            $PesterConfig = New-PesterConfiguration -Hashtable $pesterConfigHash
+            $result = Invoke-Pester -Configuration $PesterConfig
+          }
+          
+          $resultXmlPath = (Join-Path -Path $TestPath -ChildPath 'result.xml')
+          if (Test-Path -Path $resultXmlPath) {
+            $result | Export-CliXml -Path 
+          }
 
           $LASTEXITCODE = $result.FailedCount
           $host.SetShouldExit($LASTEXITCODE)
@@ -216,6 +331,7 @@ module Kitchen
           if powershell_module.is_a? Hash
             <<-PS1
               ${#{powershell_module[:Name]}} = #{ps_hash(powershell_module)}
+
               Install-ModuleFromNuget -Module ${#{powershell_module[:Name]}} #{gallery_url_param}
             PS1
           else
@@ -231,7 +347,7 @@ module Kitchen
       #
       # @return [Array<String>] array of suite files
       # @api private
-      def register_psrepository
+      def register_psrepository_scriptblock
         return if config[:register_repository].nil?
 
         info("Registering a new PowerShellGet Repository")
@@ -302,30 +418,55 @@ module Kitchen
         windows_os? ? really_wrap_windows_shell_code(code) : really_wrap_posix_shell_code(code)
       end
 
+      # Get the defined shell or fall back to pwsh, unless we're on windows where we use powershell
+      # call via sudo if sudo is true.
+      # This allows to use pwsh-preview instead of pwsh, or a full path to a specific binary.
+      def shell_cmd
+        if !config[:shell].nil?
+          config[:sudo] ? "sudo #{config[:shell]}" : "#{config[:shell]}"
+        elsif windows_os?
+          'powershell'
+        else
+          config[:sudo] ? "sudo pwsh" : "pwsh"
+        end
+      end
+
       def really_wrap_windows_shell_code(code)
-        wrap_shell_code(Util.outdent!(use_local_powershell_modules(code)))
+        my_command = <<-PWSH
+          echo "Running as '$(whoami)'..."
+          New-Item -ItemType Directory -Path '#{config[:root_path]}/modules' -Force -ErrorAction SilentlyContinue
+          Set-Location -Path "#{config[:root_path]}"
+          # Send the pwsh here string to the file kitchen_cmd.ps1
+          @'
+          Set-ExecutionPolicy Unrestricted -force
+          #{Util.outdent!(use_local_powershell_modules(code))}
+          '@ | Set-Content -Path kitchen_cmd.ps1 -Encoding utf8 -Force -ErrorAction 'Stop'
+          # create the modules folder, making sure it's done as current user (not root)
+          # 
+          # Invoke the created kitchen_cmd.ps1 file using pwsh
+          #{shell_cmd} ./kitchen_cmd.ps1
+        PWSH
+        
+        wrap_shell_code(Util.outdent!(my_command))
       end
 
       # Writing the command to a ps1 file, adding the pwsh shebang
       # invoke the file
       def really_wrap_posix_shell_code(code)
-        if config[:sudo]
-          pwsh_cmd = "sudo pwsh"
-        else
-          pwsh_cmd = "pwsh"
-        end
 
         my_command = <<-BASH
           echo "Running as '$(whoami)'"
-          # Send the bash heredoc 'EOF' to the file current.ps1 using the tool cat
-          cat << 'EOF' > current.ps1
+          # create the modules folder, making sure it's done as current user (not root)
+          mkdir -p #{config[:root_path]}/modules
+          cd #{config[:root_path]}
+          # Send the bash heredoc 'EOF' to the file kitchen_cmd.ps1 using the tool cat
+          cat << 'EOF' > kitchen_cmd.ps1
           #!/usr/bin/env pwsh
           #{Util.outdent!(use_local_powershell_modules(code))}
           EOF
-          # create the modules folder, making sure it's done as current user (not root)
-          mkdir -p foo #{config[:root_path]}/modules
-          # Invoke the created current.ps1 file using pwsh
-          #{pwsh_cmd} -f current.ps1
+          chmod +x kitchen_cmd.ps1
+          # Invoke the created kitchen_cmd.ps1 file using pwsh
+          #{shell_cmd} ./kitchen_cmd.ps1
         BASH
 
         debug(Util.outdent!(my_command))
@@ -334,20 +475,12 @@ module Kitchen
 
       def use_local_powershell_modules(script)
         <<-PS1
-          try {
-            if (!$IsLinux -and !$IsMacOs) {
-              Set-ExecutionPolicy Unrestricted -force
-            }
-          }
-          catch {
-              $_ | Out-String | Write-Warning
-          }
-
+          Write-Host -Object ("{0} - PowerShell {1}" -f $PSVersionTable.OS,$PSVersionTable.PSVersion)
           $global:ProgressPreference = 'SilentlyContinue'
           $PSModPathToPrepend = Join-Path "#{config[:root_path]}" -ChildPath 'modules'
           Write-Verbose "Adding '$PSModPathToPrepend' to `$Env:PSModulePath."
           if (!$isLinux -and -not (Test-Path -Path $PSModPathToPrepend)) {
-            # if you create this folder now un Linux, it will run as root (via sudo).
+            # if you create this folder now in Linux, it may run as root (via sudo).
             $null = New-Item -Path $PSModPathToPrepend -Force -ItemType Directory
           }
 
@@ -367,7 +500,7 @@ module Kitchen
 
           #{get_powershell_modules_from_nugetapi.join("\n") unless config.dig(:bootstrap, :modules).nil?}
 
-          #{register_psrepository.join("\n") unless config[:register_repository].nil?}
+          #{register_psrepository_scriptblock.join("\n") unless config[:register_repository].nil?}
 
           #{install_pester}
 
@@ -387,14 +520,22 @@ module Kitchen
         CMD
                                      ))
       end
-
+      
       def download_test_files(state)
-        return if config[:downloads].nil?
+        if config[:downloads].nil?
+          info("Not downloading test result files from #{instance.to_str}.")
+          return
+        end
 
         info("Downloading test result files from #{instance.to_str}")
         instance.transport.connection(state) do |conn|
-          config[:downloads].to_h.each do |remotes, local|
-            debug("Downloading #{Array(remotes).join(", ")} to #{local}")
+          config[:downloads].each do |remotes, local|
+            
+            # if the destination ends by / or \ make sure it's a folder and it's created
+            # if local.match?('\\$|/$')
+            #   info("Local folder: #{local}")
+            #   FileUtils.mkdir_p(local)
+            # end
             conn.download(remotes, local)
           end
         end
@@ -527,7 +668,7 @@ module Kitchen
       end
 
       def prepare_supporting_psmodules
-        debug("Preparing to copy files from '#{support_psmodule_folder}' to the SUT.")
+        info("Preparing to copy files from '#{support_psmodule_folder}' to the SUT.")
         sandbox_module_path = File.join(sandbox_path, "modules")
         copy_if_src_exists(support_psmodule_folder, sandbox_module_path)
       end
@@ -542,7 +683,7 @@ module Kitchen
           return
         end
 
-        debug("Moving #{src_to_validate} to #{destination}")
+        info("Moving #{src_to_validate} to #{destination}")
         unless Dir.exist?(destination)
           FileUtils.mkdir_p(destination)
           debug("Folder '#{destination}' created.")
