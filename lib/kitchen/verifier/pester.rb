@@ -59,10 +59,10 @@ module Kitchen
         },
         Output: {
           Verbosity: "Detailed",
-        }
+        },
       }
       default_config :install_modules, []
-      default_config :downloads, {"./PesterTestResults.xml" => "./testresults/"}
+      default_config :downloads, { "./PesterTestResults.xml" => "./testresults/" }
       default_config :copy_folders, []
       default_config :sudo, false
       default_config :shell, nil
@@ -178,25 +178,24 @@ module Kitchen
         really_wrap_shell_code(invoke_pester_scriptblock)
       end
 
-      # Resolves the remote Downloads path from the verifier root path, 
+      # Resolves the remote Downloads path from the verifier root path,
       # unless they're absolute path (starts with / or C:\)
       # This updates the config[:downloads], nothing (nil) is returned.
       #
       # @return [nil] updates config downloads
       def resolve_downloads_paths!
         info("Resolving Downloads path from config.")
-        
         config[:downloads] = config[:downloads]
           .map do |source, destination|
             source = source.to_s
             info("  resolving remote source's absolute path.")
-            if !source.match?('^/|^[a-zA-Z]:[\\/]') # is Absolute?
+            unless source.match?('^/|^[a-zA-Z]:[\\/]') # is Absolute?
               info("  '#{source}' is a relative path, resolving to: #{File.join(config[:root_path], source)}")
               source = File.join(config[:root_path], source.to_s).to_s
             end
 
             if destination.match?('\\$|/$') # is Folder (ends with / or \)
-              destination = File.join(destination, File.basename(source)).to_s 
+              destination = File.join(destination, File.basename(source)).to_s
             end
             info("  Destination: #{destination}")
             if !File.directory?(File.dirname(destination))
@@ -205,10 +204,7 @@ module Kitchen
               info("  Directory #{File.dirname(destination)} seem to exist.")
             end
 
-            [
-              source,
-              destination
-            ]
+            [ source, destination ]
           end
         nil # make sure we do not return anything
       end
@@ -221,7 +217,7 @@ module Kitchen
         ensure
           info("Ensure download test files.")
           download_test_files(state) unless config[:downloads].nil?
-          info('Download complete.')
+          info("Download complete.")
         end
       else
         def call(state)
@@ -308,7 +304,7 @@ module Kitchen
           
           $resultXmlPath = (Join-Path -Path $TestPath -ChildPath 'result.xml')
           if (Test-Path -Path $resultXmlPath) {
-            $result | Export-CliXml -Path 
+            $result | Export-CliXml -Path
           }
 
           $LASTEXITCODE = $result.FailedCount
@@ -425,7 +421,7 @@ module Kitchen
         if !config[:shell].nil?
           config[:sudo] ? "sudo #{config[:shell]}" : "#{config[:shell]}"
         elsif windows_os?
-          'powershell'
+          "powershell"
         else
           config[:sudo] ? "sudo pwsh" : "pwsh"
         end
@@ -447,11 +443,10 @@ module Kitchen
           #{Util.outdent!(use_local_powershell_modules(code))}
           '@ | Set-Content -Path kitchen_cmd.ps1 -Encoding utf8 -Force -ErrorAction 'Stop'
           # create the modules folder, making sure it's done as current user (not root)
-          # 
+          #
           # Invoke the created kitchen_cmd.ps1 file using pwsh
           #{shell_cmd} ./kitchen_cmd.ps1
         PWSH
-        
         wrap_shell_code(Util.outdent!(my_command))
       end
 
