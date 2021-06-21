@@ -529,7 +529,7 @@ module Kitchen
         info("Downloading test result files from #{instance.to_str}")
         instance.transport.connection(state) do |conn|
           config[:downloads].each do |remotes, local|
-            degug("downloading #{Array(remotes).join(", ")} to #{local}")
+            debug("downloading #{Array(remotes).join(", ")} to #{local}")
             conn.download(remotes, local)
           end
         end
