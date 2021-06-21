@@ -119,8 +119,20 @@ You can use this to install the module from a private gallery, for instance.
     }
   }
   ```
-  This object is converted to a hashtable and used to create a PesterConfiguration object in Pester v5, in turn used with invoke pester.
-  If the installed version of Pester is v4, an hashtable is used with the outputFile, script, testSuiteName, resultXmlPath and splatted to `Invoke-Pester`.
+
+  This object is converted to a hashtable used to create a PesterConfiguration object in **Pester v5** (`$PesterConfig = New-PesterConfiguration -Hashtable $pester_configuration`), in turn used with invoke pester (`Invoke-Pester -Configuration $PesterConfig`).  
+  If some of the following **keys** are missing, the associated defaults below will be used:
+  - **Run.Path** = `$Env:Temp/verifier/suites`
+  - **TestResult.TestSuiteName** = `Pester - $KitchenInstanceName`
+  - **TestResult.OutputPath** = `$Env:Temp/verifier/PesterTestResults.xml`
+
+  If the installed version of Pester is **v4**, and the `pester_configuration` hash is provided, valid parameters for `Invoke-Pester` will be used (and invalid parameter names will be ignored).  
+  In the case of Pester v4, and the `pester_configuration` hash does not provide the keys for `Script`,`OutputFile`,`OutputFormat`, `Passthru`, `PesterOption`, the defaults will be:
+  - Script: `$Env:Temp/verifier/suites`
+  - OutPutFile: `$Env:Temp/verifier/PesterTestResults.xml`
+  - OutputFormat: `NUnitXml`
+  - Passthru: `true`
+  - PesterOption: the result of `$(New-PesterOption -TestSuiteName "Pester - $KitchenInstanceName)`
 
 * `shell` - string, default is `Nil` which makes it call PowerShell on Windows (Windows PowerShell), pwsh on other OSes.
 It will honour the `sudo` configuration property if set to true on non-windows.
