@@ -102,12 +102,53 @@ Specify parameters for installing Pester before running the tests.
 The map will be splatted to the `Install-Module -Name Pester` command.
 You can use this to install the module from a private gallery, for instance.
 
+* `pester_configuration` - hash, defaults to
+  ```ruby
+  {
+    run: {
+      path: "suites/",
+      PassThru: true,
+    },
+    TestResult: {
+      Enabled: true,
+      OutputPath: "PesterTestResults.xml",
+      TestSuiteName: "",
+    },
+    Output: {
+      Verbosity: "Detailed",
+    }
+  }
+  ```
+
+  This object is converted to a hashtable used to create a PesterConfiguration object in **Pester v5** (`$PesterConfig = New-PesterConfiguration -Hashtable $pester_configuration`), in turn used with invoke pester (`Invoke-Pester -Configuration $PesterConfig`).  
+  If some of the following **keys** are missing, the associated defaults below will be used:
+  - **Run.Path** = `$Env:Temp/verifier/suites`
+  - **TestResult.TestSuiteName** = `Pester - $KitchenInstanceName`
+  - **TestResult.OutputPath** = `$Env:Temp/verifier/PesterTestResults.xml`
+
+  If the installed version of Pester is **v4**, and the `pester_configuration` hash is provided, valid parameters for `Invoke-Pester` will be used (and invalid parameter names will be ignored).  
+  In the case of Pester v4, and the `pester_configuration` hash does not provide the keys for `Script`,`OutputFile`,`OutputFormat`, `Passthru`, `PesterOption`, the defaults will be:
+  - Script: `$Env:Temp/verifier/suites`
+  - OutPutFile: `$Env:Temp/verifier/PesterTestResults.xml`
+  - OutputFormat: `NUnitXml`
+  - Passthru: `true`
+  - PesterOption: the result of `$(New-PesterOption -TestSuiteName "Pester - $KitchenInstanceName)`
+
+* `shell` - string, default is `Nil` which makes it call PowerShell on Windows (Windows PowerShell), pwsh on other OSes.
+It will honour the `sudo` configuration property if set to true on non-windows.
+
 * `sudo` - bool, default is `false`. (non-windows only)
 Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
-* `downloads`- map[string[], string], defaults to `["./PesterTestResults.xml"] => "./testresults"`.  
-Files to download from SUT to local system, used to download the pester results locally. The key is the remote files or directories, value the directory it should be saved to.
+* `downloads`- map[string, string], defaults to `{"./PesterTestResults.xml" => "./testresults}"`.
+Files to download from SUT to local system, used to download the pester results localy. 
+The key is the remote file (relative to verifier folder or absolute), the value is the directory (ends with / or \\) it should be saved to (relative to pwd or absolute).
+  ```yaml
+  downloads:
+      PesterTestResults.xml: "./output/testResults/"
+      kitchen_cmd.ps1: "./output/testResults/"
+  ```
 
 ---
 
@@ -133,7 +174,7 @@ verifier:
 ### Default Azure Ubuntu 18.04 Install
 
 Assuming you are using the AzureRM driver and a Ubuntu image, you may need to install pwsh before being able to execute any PowerShell code.  
-One way to achieve this is by using Test-Kitchen's lifecycle hooks to install is using the [snap](https://snapcraft.io/powershell) package management.
+One way to achieve this is by using Test-Kitchen's lifecycle hooks to install it using the [snap](https://snapcraft.io/powershell) package management.
 
 Then if your tests are written for Pester v4.x, make sure you specify a maximum version in the install.  
 As pwsh comes with a recent version of PowerShellGet, it is not necessary to bootstrap the PowerShell environment.
