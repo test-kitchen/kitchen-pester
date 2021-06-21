@@ -301,7 +301,7 @@ module Kitchen
             $PesterConfig = New-PesterConfiguration -Hashtable $pesterConfigHash
             $result = Invoke-Pester -Configuration $PesterConfig
           }
-          
+        
           $resultXmlPath = (Join-Path -Path $TestPath -ChildPath 'result.xml')
           if (Test-Path -Path $resultXmlPath) {
             $result | Export-CliXml -Path
@@ -453,7 +453,6 @@ module Kitchen
       # Writing the command to a ps1 file, adding the pwsh shebang
       # invoke the file
       def really_wrap_posix_shell_code(code)
-
         my_command = <<-BASH
           echo "Running as '$(whoami)'"
           # create the modules folder, making sure it's done as current user (not root)
@@ -520,7 +519,7 @@ module Kitchen
         CMD
                                      ))
       end
-      
+
       def download_test_files(state)
         if config[:downloads].nil?
           info("Skipped downloading test result file from #{instance.to_str}; 'downloads' hash is empty.")
@@ -530,7 +529,7 @@ module Kitchen
         info("Downloading test result files from #{instance.to_str}")
         instance.transport.connection(state) do |conn|
           config[:downloads].each do |remotes, local|
-            degug("downloading #{Array(remotes).join(', ')} to #{local}")
+            degug("downloading #{Array(remotes).join(", ")} to #{local}")
             conn.download(remotes, local)
           end
         end
