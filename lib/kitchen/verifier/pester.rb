@@ -249,11 +249,11 @@ module Kitchen
             Write-Host -Object "Invoke Pester with v$($PesterModule.Version) Options"
             $options = New-PesterOption -TestSuiteName "Pester - #{instance.to_str}"
             $defaultPesterParameters = @{
-                Script = $TestPath
-                OutputFile = $OutputFilePath
-                OutputFormat = 'NUnitXml'
-                PassThru = $true
-                PesterOption = $options
+                Script        = $TestPath
+                OutputFile    = $OutputFilePath
+                OutputFormat  = 'NUnitXml'
+                PassThru      = $true
+                PesterOption  = $options
             }
 
             $pesterCmd = Get-Command -Name 'Invoke-Pester'
@@ -438,7 +438,12 @@ module Kitchen
           Set-Location -Path "#{config[:root_path]}"
           # Send the pwsh here string to the file kitchen_cmd.ps1
           @'
-          Set-ExecutionPolicy Unrestricted -force
+          try {
+              Set-ExecutionPolicy Unrestricted -force
+          }
+          catch {
+              $_ | Out-String | Write-Warning
+          }
           #{Util.outdent!(use_local_powershell_modules(code))}
           '@ | Set-Content -Path kitchen_cmd.ps1 -Encoding utf8 -Force -ErrorAction 'Stop'
           # create the modules folder, making sure it's done as current user (not root)
@@ -523,19 +528,14 @@ module Kitchen
       
       def download_test_files(state)
         if config[:downloads].nil?
-          info("Not downloading test result files from #{instance.to_str}.")
+          info("Skipped downloading test result file from #{instance.to_str}; 'downloads' hash is empty.")
           return
         end
 
         info("Downloading test result files from #{instance.to_str}")
         instance.transport.connection(state) do |conn|
           config[:downloads].each do |remotes, local|
-            
-            # if the destination ends by / or \ make sure it's a folder and it's created
-            # if local.match?('\\$|/$')
-            #   info("Local folder: #{local}")
-            #   FileUtils.mkdir_p(local)
-            # end
+            degug("downloading #{Array(remotes).join(', ')} to #{local}")
             conn.download(remotes, local)
           end
         end
