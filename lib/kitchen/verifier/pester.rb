@@ -301,7 +301,7 @@ module Kitchen
             $PesterConfig = New-PesterConfiguration -Hashtable $pesterConfigHash
             $result = Invoke-Pester -Configuration $PesterConfig
           }
-        
+
           $resultXmlPath = (Join-Path -Path $TestPath -ChildPath 'result.xml')
           if (Test-Path -Path $resultXmlPath) {
             $result | Export-CliXml -Path
