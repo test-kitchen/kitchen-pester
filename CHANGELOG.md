@@ -1,5 +1,19 @@
 # Changelog
 
+## [v1.1.0](https://github.com/test-kitchen/kitchen-pester/tree/v1.1.0) (2021-07-02)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v1.0.0...v1.1.0)
+
+**Merged pull requests:**
+
+- fixing tiny typo [\#78](https://github.com/test-kitchen/kitchen-pester/pull/78) ([gaelcolas](https://github.com/gaelcolas))
+- fix/pester5 [\#77](https://github.com/test-kitchen/kitchen-pester/pull/77) ([gaelcolas](https://github.com/gaelcolas))
+- Update github\_changelog\_generator requirement from 1.16.2 to 1.16.4 [\#76](https://github.com/test-kitchen/kitchen-pester/pull/76) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Upgrade to GitHub-native Dependabot [\#74](https://github.com/test-kitchen/kitchen-pester/pull/74) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Update github\_changelog\_generator requirement from 1.16.1 to 1.16.2 [\#73](https://github.com/test-kitchen/kitchen-pester/pull/73) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Update github\_changelog\_generator requirement from 1.15.2 to 1.16.1 [\#72](https://github.com/test-kitchen/kitchen-pester/pull/72) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Optimize our requires [\#66](https://github.com/test-kitchen/kitchen-pester/pull/66) ([tas50](https://github.com/tas50))
+
 ## [v1.0.0](https://github.com/test-kitchen/kitchen-pester/tree/v1.0.0) (2020-08-19)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.12.2...v1.0.0)
@@ -33,6 +47,10 @@
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.11.0...v0.12.0)
 
+**Implemented enhancements:**
+
+- Refactor PowerShell scripts [\#50](https://github.com/test-kitchen/kitchen-pester/pull/50) ([vexx32](https://github.com/vexx32))
+
 **Fixed bugs:**
 
 - \(\#57\) Download Pester zip to modules folder [\#58](https://github.com/test-kitchen/kitchen-pester/pull/58) ([vexx32](https://github.com/vexx32))
@@ -55,10 +73,6 @@
 ## [v0.10.0](https://github.com/test-kitchen/kitchen-pester/tree/v0.10.0) (2020-01-15)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v0.9.1...v0.10.0)
-
-**Implemented enhancements:**
-
-- Refactor PowerShell scripts [\#50](https://github.com/test-kitchen/kitchen-pester/pull/50) ([vexx32](https://github.com/vexx32))
 
 **Merged pull requests:**
 
