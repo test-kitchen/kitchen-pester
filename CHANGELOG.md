@@ -1,5 +1,13 @@
 # Changelog
 
+## [v1.1.1](https://github.com/test-kitchen/kitchen-pester/tree/v1.1.1) (2021-07-16)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v1.1.0...v1.1.1)
+
+**Merged pull requests:**
+
+- Update test-kitchen requirement from \>= 1.10, \< 3 to \>= 1.10, \< 4 [\#79](https://github.com/test-kitchen/kitchen-pester/pull/79) ([dependabot[bot]](https://github.com/apps/dependabot))
+
 ## [v1.1.0](https://github.com/test-kitchen/kitchen-pester/tree/v1.1.0) (2021-07-02)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v1.0.0...v1.1.0)
