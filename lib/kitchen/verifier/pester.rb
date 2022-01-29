@@ -66,6 +66,7 @@ module Kitchen
       default_config :copy_folders, []
       default_config :sudo, false
       default_config :shell, nil
+      default_config :environment_variables, {}
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -240,6 +241,7 @@ module Kitchen
           $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
           $OutputFilePath = Join-Path "#{config[:root_path]}" -ChildPath 'PesterTestResults.xml'
 
+          #{ps_environment(config[:environment_variables])}
           if ($PesterModule.Version.Major -le 4)
           {
             Write-Host -Object "Invoke Pester with v$($PesterModule.Version) Options"
@@ -613,6 +615,13 @@ module Kitchen
           # In most cases, PS is smart enough to convert back to the type it needs.
           "'" + obj.to_s + "'"
         end
+      end
+
+      def ps_environment(obj)
+        obj.map do |k, v|
+          "$env:#{k} = '#{v}'"
+        end
+          .join("\n")
       end
 
       # returns the path of the modules subfolder
