@@ -74,6 +74,7 @@ module Kitchen
       # @param config [Hash] provided verifier configuration
       def initialize(config = {})
         init_config(config)
+        raise ClientError.new "Environment Variables must be specified as a hash, not a #{config[:environment_variables].class}" unless config[:environment_variables].is_a?(Hash)
       end
 
       # Creates a temporary directory on the local workstation into which
@@ -617,11 +618,15 @@ module Kitchen
         end
       end
 
+      # Creates environment variable assignments from a ruby map.
+      #
+      # @api private
       def ps_environment(obj)
-        obj.map do |k, v|
+        commands = obj.map do |k, v|
           "$env:#{k} = '#{v}'"
         end
-          .join("\n")
+
+        commands.join("\n")
       end
 
       # returns the path of the modules subfolder
