@@ -438,7 +438,9 @@ module Kitchen
           # Send the pwsh here string to the file kitchen_cmd.ps1
           @'
           try {
-              Set-ExecutionPolicy Unrestricted -force
+              if (@('Bypass', 'Unrestricted') -notcontains (Get-ExecutionPolicy)) {
+                  Set-ExecutionPolicy Unrestricted -Force -Scope Process
+              }
           }
           catch {
               $_ | Out-String | Write-Warning
