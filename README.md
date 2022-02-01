@@ -150,6 +150,14 @@ The key is the remote file (relative to verifier folder or absolute), the value 
       kitchen_cmd.ps1: "./output/testResults/"
   ```
 
+* `environment_variables` - map[string, string], defaults to `{}`.
+Environment variables to set in SUT for your pester tests to access.
+  ```yaml
+  environment_varialbes:
+      API_KEY: api-key-here
+      PUSH_URI: https://push.example.com
+  ```
+
 ---
 
 ## Examples
