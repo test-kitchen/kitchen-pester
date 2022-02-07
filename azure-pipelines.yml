@@ -6,13 +6,13 @@ trigger:
   batch: true
   branches:
     include:
-    - master
+    - main
 
 pr:
   autoCancel: true
   branches:
     include:
-      - master
+      - main
 
 stages:
   - stage: Build
@@ -69,7 +69,7 @@ stages:
               SPEC_OPTS: --format progress
       - job: Package
         dependsOn: Validate
-        condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/master'), notIn(variables['Build.Reason'], 'PullRequest'))
+        condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/main'), notIn(variables['Build.Reason'], 'PullRequest'))
         pool:
           imageName: 'ubuntu-16.04'
         steps:
