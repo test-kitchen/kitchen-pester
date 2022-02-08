@@ -15,7 +15,7 @@ verifier:
   name: pester
   remove_builtin_pester: false
   remove_builtin_powershellget: false
-  environment_variables:
+  environment:
     API_KEY: Some key value
     PUSH_REPO: https://push.example.com
 

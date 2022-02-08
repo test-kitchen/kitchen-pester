@@ -16,7 +16,7 @@ platforms:
 
 verifier:
   name: pester
-  environment_variables:
+  environment:
     API_KEY: Some key value
     PUSH_REPO: https://push.example.com
 
