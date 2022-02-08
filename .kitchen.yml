@@ -7,12 +7,17 @@ provisioner:
   script: provision.ps1
 
 platforms:
-- name: windows-nano
+- name: windows-2016
   driver_config:
-    box: mwrock/WindowsNano
+    box: stefanscherer/windows_2016
 
 verifier:
   name: pester
+  remove_builtin_pester: false
+  remove_builtin_powershellget: false
+  environment:
+    API_KEY: Some key value
+    PUSH_REPO: https://push.example.com
 
 suites:
   - name: default

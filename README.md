@@ -28,32 +28,32 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 
 ## Options
 
-* `restart_winrm` - boolean, default is `false`. (Windows only)  
-Restarts the winrm service using a scheduled tasks before proceding.  
+* `restart_winrm` - boolean, default is `false`. (Windows only)
+Restarts the winrm service using a scheduled tasks before proceding.
 This setting is ignored on non-windows OSes.
 
-* `test_folder` - string, default is `./tests/integration/`.  
-Allows you to specify a custom path (the default is ./test/[integration/]) for your integration tests.  
+* `test_folder` - string, default is `./tests/integration/`.
+Allows you to specify a custom path (the default is ./test/[integration/]) for your integration tests.
 This can be an absolute path or relative to the root of the folder kitchen is running from on the host machine.
-This path must exist.  
-When you specify a folder, it will automatically try to append `/integration` to that path.  
-If it exists, it will use this as the root tests directory.  
-If it doesn't, it will use the `test_folder`.  
+This path must exist.
+When you specify a folder, it will automatically try to append `/integration` to that path.
+If it exists, it will use this as the root tests directory.
+If it doesn't, it will use the `test_folder`.
 If you have a `helpers` folders under `test_folder` (i.e. `./tests/helpers`), those will be copied to the SUT for every test suite.
 
-* `remove_builtin_powershellget` - bool, default is `true` (v.1.0.0.1)  
+* `remove_builtin_powershellget` - bool, default is `true` (v.1.0.0.1)
 Remove the built-in PowerShellGet and PackageManagement modules on Windows (v1.0.0.1), as they will often cause problems and will be superseded by the bootstrapped versions by default.
 
-* `remove_builtin_pester` - bool, default is `true` (v3.4.0)  
-Remove the Pester module that is built-in on Windows (v3.4.0), because upgrading to a later version is awkward if this is not first removed (requires both `-SkipPublisherCheck` & `-Force`, which makes it slow every time you `kitchen verify`).  
+* `remove_builtin_pester` - bool, default is `true` (v3.4.0)
+Remove the Pester module that is built-in on Windows (v3.4.0), because upgrading to a later version is awkward if this is not first removed (requires both `-SkipPublisherCheck` & `-Force`, which makes it slow every time you `kitchen verify`).
 Removing the built-in ensures that the only version in use will be the Pester version specified by the configuration.
 
-* `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)  
-Allows kitchen-pester to download the PowerShellGet and PackageManagement module directly from the Nuget API URL.  
+* `bootstrap` - map,  default is `{}` (PowershellGet & Package Management)
+Allows kitchen-pester to download the PowerShellGet and PackageManagement module directly from the Nuget API URL.
 Note that it needs to be able to download the nupkg from `$galleryUrl/package/PowerShellGet`, which may not be available with some private feed implementations.
 
-* `register_repository` - array (of maps), default is `[]`  
-Allows you to register PSRepositories to download modules from. Useful when you want to use a private feed.  
+* `register_repository` - array (of maps), default is `[]`
+Allows you to register PSRepositories to download modules from. Useful when you want to use a private feed.
 This expects a map for each repository to register, the values will be splatted to `Register-PSRepository` (or `Set-PSRepository` if it already exists).
   ```yaml
     register_repository:
@@ -63,9 +63,9 @@ This expects a map for each repository to register, the values will be splatted 
         PackageManagementProvider: Nuget
   ```
 
-* `install_modules` - array (of maps), default is `[]`  
+* `install_modules` - array (of maps), default is `[]`
 Array of maps, that will be splatted to the Install-Module parameters.
-Useful for installing dependencies from a gallery.  
+Useful for installing dependencies from a gallery.
   ```yaml
     install_modules:
       - Name: MyModule
@@ -73,9 +73,9 @@ Useful for installing dependencies from a gallery.
         SkipPublisherCheck: true
   ```
 
-* `copy_folders` - array, default is `[]`  
-Folders (relative to the current directory or absolute) to copy to the System Under Test (SUT).  
-The SUT's `$env:PSModulePath` will have the parent folder prepended for the session.  
+* `copy_folders` - array, default is `[]`
+Folders (relative to the current directory or absolute) to copy to the System Under Test (SUT).
+The SUT's `$env:PSModulePath` will have the parent folder prepended for the session.
 If you are testing a PowerShell module you have built as part of your build process, this enables you to copy the module folder directly to the target machine.
   ```yaml
   verifier:
@@ -86,7 +86,7 @@ If you are testing a PowerShell module you have built as part of your build proc
       MaximumVersion: '4.99.999'
   ```
 
-* `skip_pester_install` - bool default is `false`  
+* `skip_pester_install` - bool default is `false`
 Skip installing pester and just use what's available on the box, or what you have copied with the `copy_folders` options.
 
 
@@ -120,13 +120,13 @@ You can use this to install the module from a private gallery, for instance.
   }
   ```
 
-  This object is converted to a hashtable used to create a PesterConfiguration object in **Pester v5** (`$PesterConfig = New-PesterConfiguration -Hashtable $pester_configuration`), in turn used with invoke pester (`Invoke-Pester -Configuration $PesterConfig`).  
+  This object is converted to a hashtable used to create a PesterConfiguration object in **Pester v5** (`$PesterConfig = New-PesterConfiguration -Hashtable $pester_configuration`), in turn used with invoke pester (`Invoke-Pester -Configuration $PesterConfig`).
   If some of the following **keys** are missing, the associated defaults below will be used:
   - **Run.Path** = `$Env:Temp/verifier/suites`
   - **TestResult.TestSuiteName** = `Pester - $KitchenInstanceName`
   - **TestResult.OutputPath** = `$Env:Temp/verifier/PesterTestResults.xml`
 
-  If the installed version of Pester is **v4**, and the `pester_configuration` hash is provided, valid parameters for `Invoke-Pester` will be used (and invalid parameter names will be ignored).  
+  If the installed version of Pester is **v4**, and the `pester_configuration` hash is provided, valid parameters for `Invoke-Pester` will be used (and invalid parameter names will be ignored).
   In the case of Pester v4, and the `pester_configuration` hash does not provide the keys for `Script`,`OutputFile`,`OutputFormat`, `Passthru`, `PesterOption`, the defaults will be:
   - Script: `$Env:Temp/verifier/suites`
   - OutPutFile: `$Env:Temp/verifier/PesterTestResults.xml`
@@ -142,12 +142,20 @@ Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
 * `downloads`- map[string, string], defaults to `{"./PesterTestResults.xml" => "./testresults}"`.
-Files to download from SUT to local system, used to download the pester results localy. 
+Files to download from SUT to local system, used to download the pester results localy.
 The key is the remote file (relative to verifier folder or absolute), the value is the directory (ends with / or \\) it should be saved to (relative to pwd or absolute).
   ```yaml
   downloads:
       PesterTestResults.xml: "./output/testResults/"
       kitchen_cmd.ps1: "./output/testResults/"
+  ```
+
+* `environment` - map[string, string], defaults to `{}`.
+Environment variables to set in SUT for your pester tests to access.
+  ```yaml
+  environment:
+      API_KEY: api-key-here
+      PUSH_URI: https://push.example.com
   ```
 
 ---
@@ -173,10 +181,10 @@ verifier:
 
 ### Default Azure Ubuntu 18.04 Install
 
-Assuming you are using the AzureRM driver and a Ubuntu image, you may need to install pwsh before being able to execute any PowerShell code.  
+Assuming you are using the AzureRM driver and a Ubuntu image, you may need to install pwsh before being able to execute any PowerShell code.
 One way to achieve this is by using Test-Kitchen's lifecycle hooks to install it using the [snap](https://snapcraft.io/powershell) package management.
 
-Then if your tests are written for Pester v4.x, make sure you specify a maximum version in the install.  
+Then if your tests are written for Pester v4.x, make sure you specify a maximum version in the install.
 As pwsh comes with a recent version of PowerShellGet, it is not necessary to bootstrap the PowerShell environment.
 The `Install-Module` command should work out of the box.
 
@@ -229,7 +237,7 @@ verifier:
 
 ## Contributing
 
-1. Fork it ( https://github.com/[my-github-username]/kitchen-pester/fork )
+1. [Fork it](https://github.com/test-kitchen/kitchen-pester/fork)
 2. Create your feature branch (`git checkout -b my-new-feature`)
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)

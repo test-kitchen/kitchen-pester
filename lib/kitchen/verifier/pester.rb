@@ -66,6 +66,7 @@ module Kitchen
       default_config :copy_folders, []
       default_config :sudo, false
       default_config :shell, nil
+      default_config :environment, {}
 
       # Creates a new Verifier object using the provided configuration data
       # which will be merged with any default configuration.
@@ -73,6 +74,7 @@ module Kitchen
       # @param config [Hash] provided verifier configuration
       def initialize(config = {})
         init_config(config)
+        raise ClientError.new "Environment Variables must be specified as a hash, not a #{config[:environment].class}" unless config[:environment].is_a?(Hash)
       end
 
       # Creates a temporary directory on the local workstation into which
@@ -240,6 +242,7 @@ module Kitchen
           $TestPath = Join-Path "#{config[:root_path]}" -ChildPath "suites"
           $OutputFilePath = Join-Path "#{config[:root_path]}" -ChildPath 'PesterTestResults.xml'
 
+          #{ps_environment(config[:environment])}
           if ($PesterModule.Version.Major -le 4)
           {
             Write-Host -Object "Invoke Pester with v$($PesterModule.Version) Options"
@@ -613,6 +616,17 @@ module Kitchen
           # In most cases, PS is smart enough to convert back to the type it needs.
           "'" + obj.to_s + "'"
         end
+      end
+
+      # Creates environment variable assignments from a ruby map.
+      #
+      # @api private
+      def ps_environment(obj)
+        commands = obj.map do |k, v|
+          "$env:#{k} = '#{v}'"
+        end
+
+        commands.join("\n")
       end
 
       # returns the path of the modules subfolder
