@@ -20,14 +20,6 @@ stages:
       - job: Validate
         strategy:
           matrix:
-            Windows_Ruby25:
-              version: 2.5
-              imageName: 'windows-2019'
-              task: windows_ci.bat
-            Windows_Ruby26:
-              version: 2.6
-              imageName: 'windows-2019'
-              task: windows_ci.bat
             Windows_Integration:
               version: 2.6
               imageName: 'windows-2019'
