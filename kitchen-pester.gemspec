@@ -16,7 +16,6 @@ Gem::Specification.new do |spec|
   spec.files         = %w{LICENSE kitchen-pester.gemspec Gemfile Rakefile} + Dir.glob("lib/**/*")
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "minitest",  "~> 5.3", "< 5.16"
   spec.add_development_dependency "mocha",     "~> 1.1"
