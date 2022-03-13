@@ -1,4 +1,4 @@
-[![Build Status](https://dev.azure.com/test-kitchen/kitchen-pester/_apis/build/status/test-kitchen.kitchen-pester?branchName=master)](https://dev.azure.com/test-kitchen/kitchen-pester/_build/latest?definitionId=4&branchName=master)
+[![Build Status](https://dev.azure.com/test-kitchen/kitchen-pester/_apis/build/status/test-kitchen.kitchen-pester?branchName=main)](https://dev.azure.com/test-kitchen/kitchen-pester/_build/latest?definitionId=4&branchName=main)
 [![Gem Version](https://badge.fury.io/rb/kitchen-pester.svg)](http://badge.fury.io/rb/kitchen-pester)
 
 # Kitchen::Pester
