@@ -143,7 +143,16 @@ This is necessary in certain cases, such as when `pwsh` is installed via `snap` 
 
 * `downloads`- map[string, string], defaults to `{"./PesterTestResults.xml" => "./testresults}"`.
 Files to download from SUT to local system, used to download the pester results localy.
-The key is the remote file (relative to verifier folder or absolute), the value is the directory (ends with / or \\) it should be saved to (relative to pwd or absolute).
+The key is the remote file to download, while the value is the destination.
+  * The source can:
+    * Be relative to the verifier folder (by default `$TEMP/verifier`)
+    * Be absolute on the system (e.g. `/var/tmp/file.zip` or `C:\\Windows\\Temp\\file.zip`)
+  * The destination can:
+    * Include `%{instance_name}` to indicate the Test Kitchen instance name
+    * Be a directory (ends in `/` or `\\`)
+    * Be relative to the Current Working Directory
+    * Be absolute
+
   ```yaml
   downloads:
       PesterTestResults.xml: "./output/testResults/"
