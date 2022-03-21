@@ -59,6 +59,10 @@ stages:
             displayName: Run Tests
             env:
               SPEC_OPTS: --format progress
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: NUnit
+              testResultsFiles: 'testresults/**/PesterTestResults.xml'
       - job: Package
         dependsOn: Validate
         condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/main'), notIn(variables['Build.Reason'], 'PullRequest'))
