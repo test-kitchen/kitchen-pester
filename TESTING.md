@@ -9,3 +9,4 @@ The general steps to test your changes:
 1. Build new gem: `chef gem build ./kitchen-pester.gemspec`
 1. Install built gem: `chef gem install ./kitchen-pester-<version>.gem`
 1. Test with `test-kitchen`: `kitchen test`
+1. Ensure that `PesterTestResults.xml` is created in `./testresults/default-windows-2016`

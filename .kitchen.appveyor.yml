@@ -19,6 +19,8 @@ verifier:
   environment:
     API_KEY: Some key value
     PUSH_REPO: https://push.example.com
+  downloads:
+    "PesterTestResults.xml": "testresults/%{instance_name}/"
 
 suites:
   - name: default

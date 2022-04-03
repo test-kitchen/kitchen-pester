@@ -190,6 +190,7 @@ module Kitchen
         config[:downloads] = config[:downloads]
           .map do |source, destination|
             source = source.to_s
+            destination = destination.gsub("%{instance_name}", instance.name)
             info("  resolving remote source's absolute path.")
             unless source.match?('^/|^[a-zA-Z]:[\\/]') # is Absolute?
               info("  '#{source}' is a relative path, resolving to: #{File.join(config[:root_path], source)}")
@@ -203,7 +204,7 @@ module Kitchen
             if !File.directory?(File.dirname(destination))
               FileUtils.mkdir_p(File.dirname(destination))
             else
-              info("  Directory #{File.dirname(destination)} seem to exist.")
+              info("  Directory #{File.dirname(destination)} seems to exist.")
             end
 
             [ source, destination ]
