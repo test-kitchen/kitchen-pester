@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.2.0](https://github.com/test-kitchen/kitchen-pester/tree/v1.2.0) (2022-05-14)
+
+[Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v1.1.1...v1.2.1)
+
 ## [v1.1.1](https://github.com/test-kitchen/kitchen-pester/tree/v1.1.1) (2021-07-16)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v1.1.0...v1.1.1)
