@@ -1,18 +1,18 @@
-gem "minitest"
-require "minitest/autorun"
-require "mocha/setup"
+# gem "minitest"
+# require "minitest/autorun"
+# require "mocha/setup"
 
 require_relative "../../lib/kitchen/verifier/pester"
 
-class MockPester < Kitchen::Verifier::Pester
-  def sandbox_path
-    "C:/users/jdoe/temp/kitchen-temp"
-  end
+# class MockPester < Kitchen::Verifier::Pester
+#   def sandbox_path
+#     "C:/users/jdoe/temp/kitchen-temp"
+#   end
 
-  def suite_test_folder
-    "C:/lowercasedpath/pester/tests"
-  end
-end
+#   def suite_test_folder
+#     "C:/lowercasedpath/pester/tests"
+#   end
+# end
 
 # describe "when sandboxifying a path" do
 #   let(:sandboxifiedPath) do

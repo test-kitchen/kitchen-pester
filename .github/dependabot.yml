@@ -1,11 +1,12 @@
+---
 version: 2
 updates:
-- package-ecosystem: bundler
-  directory: "/"
-  schedule:
-    interval: daily
-  open-pull-requests-limit: 10
-  ignore:
-  - dependency-name: github_changelog_generator
-    versions:
-    - 1.16.0
+  - package-ecosystem: bundler
+    directory: "/"
+    schedule:
+      interval: daily
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: github_changelog_generator
+        versions:
+          - 1.16.0
