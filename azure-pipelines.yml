@@ -6,7 +6,7 @@ trigger:
   batch: true
   branches:
     include:
-    - main
+      - main
 
 pr:
   autoCancel: true
@@ -22,7 +22,7 @@ stages:
           matrix:
             Windows_Integration:
               version: 2.6
-              imageName: 'windows-2019'
+              imageName: "windows-2019"
               task: windows_integration.bat
               machine_user: test_user
               machine_pass: Pass@word1
@@ -62,12 +62,12 @@ stages:
           - task: PublishTestResults@2
             inputs:
               testResultsFormat: NUnit
-              testResultsFiles: 'testresults/**/PesterTestResults.xml'
+              testResultsFiles: "testresults/**/PesterTestResults.xml"
       - job: Package
         dependsOn: Validate
         condition: and(succeeded(), eq(variables['build.sourceBranch'], 'refs/heads/main'), notIn(variables['Build.Reason'], 'PullRequest'))
         pool:
-          imageName: 'ubuntu-16.04'
+          imageName: "ubuntu-16.04"
         steps:
           - task: UseRubyVersion@0
             inputs:

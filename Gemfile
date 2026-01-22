@@ -1,6 +1,5 @@
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in kitchen-pester.gemspec
 gemspec
 
 group :integration do
@@ -10,14 +9,16 @@ group :integration do
   gem "kitchen-chocolatey"
 end
 
-group :changelog do
-  gem "github_changelog_generator", "1.16.4"
-end
-
 group :debug do
   gem "pry", "~>0.16.0"
   gem "pry-byebug", "~>3.12.0"
   gem "pry-stack_explorer"
+end
+
+group :development do
+  gem "rake", ">= 11.0"
+  #   gem "minitest"#, "~> 5.3", "< 5.16" # Commented out as these tests are not run
+  #   gem "mocha"#, "~> 1.1"
 end
 
 group :chefstyle do

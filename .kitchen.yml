@@ -7,9 +7,9 @@ provisioner:
   script: provision.ps1
 
 platforms:
-- name: windows-2016
-  driver_config:
-    box: stefanscherer/windows_2016
+  - name: windows-2016
+    driver_config:
+      box: stefanscherer/windows_2016
 
 verifier:
   name: pester
