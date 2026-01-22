@@ -17,8 +17,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "rake"
-  spec.add_development_dependency "minitest",  "~> 5.3", "< 5.16"
+  spec.add_development_dependency "minitest",  "~> 5.3", "< 5.19"
   spec.add_development_dependency "mocha",     "~> 2.0"
-
   spec.add_dependency "test-kitchen", ">= 1.10", "< 5"
 end
