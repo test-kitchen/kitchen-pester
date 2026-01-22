@@ -17,5 +17,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.required_ruby_version = ">= 2.7"
-  spec.add_dependency "test-kitchen", ">= 1.10", "< 4"
+  spec.add_development_dependency "rake"
+  spec.add_development_dependency "minitest",  "~> 5.3", "< 5.19"
+  spec.add_development_dependency "mocha",     "~> 2.0"
+  spec.add_dependency "test-kitchen", ">= 1.10", "< 5"
 end
