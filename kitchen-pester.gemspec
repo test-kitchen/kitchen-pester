@@ -18,7 +18,6 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "minitest",  "~> 5.3", "< 5.19"
-  spec.add_development_dependency "mocha",     "~> 1.1"
-
-  spec.add_dependency "test-kitchen", ">= 1.10", "< 4"
+  spec.add_development_dependency "mocha",     "~> 2.0"
+  spec.add_dependency "test-kitchen", ">= 1.10", "< 5"
 end
