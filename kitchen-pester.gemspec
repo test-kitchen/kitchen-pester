@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require "kitchen/verifier/pester_version"
 
 Gem::Specification.new do |spec|
-  spec.name          = "kitchen-pester"
+  spec.name = "kitchen-pester"
   spec.required_ruby_version = ">= 3.1"
   spec.version       = Kitchen::Verifier::PESTER_VERSION
   spec.authors       = ["Steven Murawski"]
