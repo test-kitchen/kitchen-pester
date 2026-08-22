@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Copyright (c) 2015 Steven Murawski
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,6 +30,6 @@ module Kitchen
     # test-kitchen, which is not yet available when the gemspec is evaluated.
     #
     # @return [String] the gem version
-    PESTER_VERSION = "1.2.0".freeze
+    PESTER_VERSION = "1.2.0"
   end
 end
