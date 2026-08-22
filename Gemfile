@@ -1,8 +1,7 @@
 source "https://rubygems.org"
 
 # Specify your gem's dependencies in kitchen-pester.gemspec
-gemspec
-
+gemspec development_group: :test
 group :integration do
   gem "berkshelf"
   gem "kitchen-inspec"
