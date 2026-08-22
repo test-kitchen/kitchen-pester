@@ -1,9 +1,40 @@
-# Testing kitchen-pester
+# Contributing to kitchen-pester
+
+Thanks for your interest in improving kitchen-pester. Bug reports, feature
+requests, and pull requests are all welcome.
+
+## Reporting issues
+
+Report bugs and request features on the
+[issue tracker](https://github.com/test-kitchen/kitchen-pester/issues). For
+bugs, please include:
+
+- the version of kitchen-pester and Test Kitchen you are using
+- the Pester version on the system under test, and your platform
+- your `kitchen.yml` verifier block
+- the output of the failing command, ideally with `-l debug`
+
+Because the verifier is largely a PowerShell string builder, the generated
+script from a debug run is usually the most useful thing to attach.
+
+## Submitting changes
+
+1. [Fork it](https://github.com/test-kitchen/kitchen-pester/fork)
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Make your change, with tests
+4. Make sure `bundle exec rake` passes
+5. Push (`git push origin my-new-feature`)
+6. Open a pull request
+
+Please keep pull requests focused on a single change — it makes review much
+faster. Update `README.md` when you add or change a verifier option.
+
+## Testing
 
 There are two layers: fast unit specs that run anywhere, and a slower
 integration run that drives a real Windows SUT.
 
-## Unit specs
+### Unit specs
 
 ```sh
 bundle install
@@ -29,7 +60,7 @@ To run a single file:
 bundle exec ruby -Ilib -Ispec spec/kitchen/verifier/pester_spec.rb
 ```
 
-## PowerShell module specs
+### PowerShell module specs
 
 `lib/support/modules/PesterUtil/PesterUtil.psm1` is the PowerShell module
 kitchen-pester copies to the system under test. It has its own Pester specs in
@@ -50,6 +81,19 @@ Nothing in them touches the network — the `WebClient` is replaced with a stub
 that throws the URL it was handed, which is also how the specs assert on the
 URL that `Install-ModuleFromNuget` builds.
 
+### Integration
+
+Integration testing runs `kitchen-pester` through `test-kitchen` itself.
+`provision.ps1` prepares the environment, then the tests in
+`tests/integration/default/pester/default.tests.ps1` are run.
+
+1. Build the gem: `chef gem build ./kitchen-pester.gemspec`
+1. Install it: `chef gem install ./kitchen-pester-<version>.gem`
+1. Run it: `kitchen test`
+1. Confirm `PesterTestResults.xml` appears in `./testresults/default-windows-2016`
+
+CI runs this on `windows-latest` via `.github/workflows/integration.yml`.
+
 ## Documentation
 
 The public API is documented with [YARD](https://yardoc.org/). Every class,
@@ -66,16 +110,3 @@ or CI.
 
 Options live in `.yardopts`, so a bare `yard` on the command line produces the
 same output as the rake task.
-
-## Integration
-
-Integration testing runs `kitchen-pester` through `test-kitchen` itself.
-`provision.ps1` prepares the environment, then the tests in
-`tests/integration/default/pester/default.tests.ps1` are run.
-
-1. Build the gem: `chef gem build ./kitchen-pester.gemspec`
-1. Install it: `chef gem install ./kitchen-pester-<version>.gem`
-1. Run it: `kitchen test`
-1. Confirm `PesterTestResults.xml` appears in `./testresults/default-windows-2016`
-
-CI runs this on `windows-latest` via `.github/workflows/integration.yml`.
