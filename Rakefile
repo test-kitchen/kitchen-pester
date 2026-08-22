@@ -10,7 +10,50 @@ Rake::TestTask.new(:unit) do |t|
   t.verbose = true
 end
 
-task test: :unit
+# The PowerShell module kitchen-pester ships to the SUT has its own Pester
+# specs. They need pwsh and Pester 5+, and skip themselves when either is
+# missing so `rake test` still works on a plain Ruby box.
+desc "Run the Pester specs for the bundled PowerShell module"
+task :pester do
+  pwsh = ENV["PWSH"] || "pwsh"
+
+  available = system(
+    pwsh, "-NoProfile", "-NonInteractive", "-Command", "exit 0",
+    out: File::NULL, err: File::NULL
+  )
+
+  unless available
+    puts "pwsh not found; skipping the PowerShell specs. " \
+         "See https://github.com/PowerShell/PowerShell to install it."
+    next
+  end
+
+  script = <<~PS
+    $ErrorActionPreference = 'Stop'
+    $pester = Get-Module -ListAvailable Pester |
+      Where-Object { $_.Version.Major -ge 5 } |
+      Sort-Object Version -Descending |
+      Select-Object -First 1
+
+    if (-not $pester) {
+      Write-Host "Pester 5+ not found; skipping. Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser"
+      exit 0
+    }
+
+    Import-Module $pester.Path -Force
+    Write-Host "Running the PowerShell specs with Pester $($pester.Version)"
+    $config = New-PesterConfiguration
+    $config.Run.Path = 'spec/powershell'
+    $config.Run.Exit = $true
+    $config.Output.Verbosity = 'Detailed'
+    Invoke-Pester -Configuration $config
+  PS
+
+  # verbose: false so the whole embedded script is not echoed first.
+  sh(pwsh, "-NoProfile", "-NonInteractive", "-Command", script, verbose: false)
+end
+
+task test: %i{unit pester}
 
 begin
   require "cookstyle/chefstyle"
