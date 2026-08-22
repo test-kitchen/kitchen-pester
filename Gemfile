@@ -10,10 +10,6 @@ group :integration do
   gem "kitchen-chocolatey"
 end
 
-group :changelog do
-  gem "github_changelog_generator", "1.16.4"
-end
-
 group :debug do
   gem "pry"
   gem "pry-byebug"
