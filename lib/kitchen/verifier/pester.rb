@@ -192,13 +192,16 @@ module Kitchen
             source = source.to_s
             destination = destination.gsub("%{instance_name}", instance.name)
             info("  resolving remote source's absolute path.")
-            unless source.match?('^/|^[a-zA-Z]:[\\/]') # is Absolute?
+            unless source.match?(%r{^/|^[a-zA-Z]:[\\/]}) # is Absolute?
               info("  '#{source}' is a relative path, resolving to: #{File.join(config[:root_path], source)}")
               source = File.join(config[:root_path], source.to_s).to_s
             end
 
-            if destination.match?('\\$|/$') # is Folder (ends with / or \)
-              destination = File.join(destination, File.basename(source)).to_s
+            if destination.match?(%r{[\\/]$}) # is Folder (ends with / or \)
+              # Append to the separator the user already supplied. File.join
+              # would add a second one, of whichever flavour the workstation
+              # happens to use.
+              destination = "#{destination}#{remote_basename(source)}"
             end
             info("  Destination: #{destination}")
             if !File.directory?(File.dirname(destination))
@@ -209,6 +212,7 @@ module Kitchen
 
             [ source, destination ]
           end
+          .to_h # Hash#map yields pairs; keep :downloads the hash it started as
         nil # make sure we do not return anything
       end
 
@@ -308,7 +312,7 @@ module Kitchen
 
           $resultXmlPath = (Join-Path -Path $TestPath -ChildPath 'result.xml')
           if (Test-Path -Path $resultXmlPath) {
-            $result | Export-CliXml -Path
+            $result | Export-CliXml -Path $resultXmlPath
           }
 
           $LASTEXITCODE = $result.FailedCount
@@ -514,7 +518,7 @@ module Kitchen
       end
 
       def restart_winrm_service
-        return unless verifier.windows_os?
+        return unless windows_os?
 
         cmd = "schtasks /Create /TN restart_winrm /TR " \
               '"powershell -Command Restart-Service winrm" ' \
@@ -617,7 +621,7 @@ module Kitchen
         else
           # When the object is not a string nor a hash or array, it will be quoted as a string.
           # In most cases, PS is smart enough to convert back to the type it needs.
-          "'" + obj.to_s + "'"
+          ps_single_quote(obj)
         end
       end
 
@@ -626,10 +630,24 @@ module Kitchen
       # @api private
       def ps_environment(obj)
         commands = obj.map do |k, v|
-          "$env:#{k} = '#{v}'"
+          "$env:#{k} = #{ps_single_quote(v)}"
         end
 
         commands.join("\n")
+      end
+
+      # Renders a value as a single-quoted PowerShell string literal.
+      #
+      # PowerShell escapes a literal quote inside a single-quoted string by
+      # doubling it. Without this an apostrophe anywhere in the config -- a
+      # module name, an environment value, a password -- closes the string
+      # early and corrupts the rest of the generated script.
+      #
+      # @param value [Object] any value; #to_s is used
+      # @return [String] a quoted, escaped PowerShell string literal
+      # @api private
+      def ps_single_quote(value)
+        "'#{value.to_s.gsub("'", "''")}'"
       end
 
       # returns the path of the modules subfolder
@@ -718,7 +736,21 @@ module Kitchen
       def absolute_test_folder
         path = (Pathname.new config[:test_folder]).realpath
         integration_path = File.join(path, "integration")
-        Dir.exist?(integration_path) ? integration_path : path
+        Dir.exist?(integration_path) ? integration_path : path.to_s
+      end
+
+      # Returns the final segment of a path that lives on the SUT.
+      #
+      # File.basename applies the *workstation's* separator rules, so a Windows
+      # remote path such as 'C:\results\out.xml' comes back unchanged when
+      # kitchen runs on macOS or Linux -- the usual case for a Windows SUT.
+      # Split on either separator instead.
+      #
+      # @param path [String] a path as it exists on the instance
+      # @return [String] the last path segment
+      # @api private
+      def remote_basename(path)
+        path.to_s.split(%r{[\\/]}).last.to_s
       end
 
       # returns a string of space of the specified depth.

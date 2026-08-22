@@ -7,3 +7,30 @@ name: "Test"
 jobs:
   lint-unit:
     uses: test-kitchen/.github/.github/workflows/lint-unit.yml@main
+
+  unit-powershell:
+    # The reusable lint-unit workflow runs the specs, but the generated-script
+    # syntax specs skip themselves unless pwsh is present. GitHub's Ubuntu
+    # images ship PowerShell 7, so run the suite once more here to pick them up.
+    name: Unit (PowerShell parser available)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["3.1", "3.4", "4.0"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Report the PowerShell version in use
+        run: pwsh -NoProfile -Command '$PSVersionTable.PSVersion.ToString()'
+
+      - name: Run unit tests
+        run: bundle exec rake unit

@@ -1,6 +1,5 @@
 # Kitchen::Pester
 
-[![Build Status](https://dev.azure.com/test-kitchen/kitchen-pester/_apis/build/status/test-kitchen.kitchen-pester?branchName=main)](https://dev.azure.com/test-kitchen/kitchen-pester/_build/latest?definitionId=4&branchName=main)
 [![Gem Version](https://badge.fury.io/rb/kitchen-pester.svg)](http://badge.fury.io/rb/kitchen-pester)
 
 Execute [Pester](https://github.com/pester/Pester) tests, cross platform, right from Test-Kitchen, without having to transit the Busser layer.
