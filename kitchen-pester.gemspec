@@ -16,7 +16,9 @@ Gem::Specification.new do |spec|
   spec.homepage      = "https://github.com/test-kitchen/kitchen-pester"
   spec.license       = "MIT"
 
-  spec.files         = %w{LICENSE kitchen-pester.gemspec} + Dir.glob("lib/**/*")
+  # README.md is what YARD picks up as the front page of the generated docs,
+  # which is how rubydoc.info renders this gem.
+  spec.files         = %w{LICENSE README.md kitchen-pester.gemspec} + Dir.glob("lib/**/*")
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "rake"
