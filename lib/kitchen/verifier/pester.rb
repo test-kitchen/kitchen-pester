@@ -26,8 +26,6 @@ require "fileutils" unless defined?(FileUtils)
 require "pathname" unless defined?(Pathname)
 require "kitchen/util"
 require "kitchen/verifier/base"
-require "kitchen/version"
-require "base64" unless defined?(Base64)
 require_relative "pester_version"
 
 module Kitchen
@@ -249,42 +247,19 @@ module Kitchen
         nil # make sure we do not return anything
       end
 
-      # Download functionality was added to the base verifier behavior after
-      # version 2.3.4. On older releases the base verifier never retrieves the
-      # results, so this class does it in an `ensure` block; on newer ones the
-      # base class handles the success path and only failures need handling
-      # here.
-      if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new("2.3.4")
-        # Runs the verifier on the instance, always retrieving the test
-        # results afterwards.
-        #
-        # @param state [Hash] mutable instance state
-        # @raise [Kitchen::ActionFailed] if the verification failed
-        # @return [void]
-        def call(state)
-          super
-        ensure
-          info("Ensure download test files.")
-          download_test_files(state) unless config[:downloads].nil?
-          info("Download complete.")
-        end
-      else
-        # Runs the verifier on the instance, retrieving the test results even
-        # when the run fails.
-        #
-        # @param state [Hash] mutable instance state
-        # @raise [Kitchen::ActionFailed] if the verification failed
-        # @return [void]
-        def call(state)
-          super
-        rescue
-          # If the verifier reports failure, we need to download the files ourselves.
-          # Test Kitchen's base verifier doesn't have the download in an `ensure` block.
-          info("Rescue to download test files.")
-          download_test_files(state) unless config[:downloads].nil?
-          # Rethrow original exception, we still want to register the failure.
-          raise
-        end
+      # Runs the verifier on the instance, retrieving the test results even
+      # when the run fails.
+      #
+      # @param state [Hash] mutable instance state
+      # @raise [Kitchen::ActionFailed] if the verification failed
+      # @return [void]
+      def call(state)
+        super
+      rescue
+        info("Rescue to download test files.")
+        download_test_files(state) unless config[:downloads].nil?
+        # Rethrow the original exception; the failure still has to register.
+        raise
       end
 
       # Returns the PowerShell that imports Pester and invokes it.
