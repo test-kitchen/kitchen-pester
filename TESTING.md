@@ -29,6 +29,27 @@ To run a single file:
 bundle exec ruby -Ilib -Ispec spec/kitchen/verifier/pester_spec.rb
 ```
 
+## PowerShell module specs
+
+`lib/support/modules/PesterUtil/PesterUtil.psm1` is the PowerShell module
+kitchen-pester copies to the system under test. It has its own Pester specs in
+`spec/powershell/`:
+
+```sh
+bundle exec rake pester
+```
+
+They need `pwsh` and Pester 5+, and skip themselves when either is missing, so
+`rake test` still works on a plain Ruby box. To run them locally:
+
+```sh
+pwsh -Command 'Install-Module Pester -MinimumVersion 5.0.0 -Scope CurrentUser'
+```
+
+Nothing in them touches the network — the `WebClient` is replaced with a stub
+that throws the URL it was handed, which is also how the specs assert on the
+URL that `Install-ModuleFromNuget` builds.
+
 ## Documentation
 
 The public API is documented with [YARD](https://yardoc.org/). Every class,
