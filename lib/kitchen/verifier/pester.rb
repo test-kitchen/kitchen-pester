@@ -365,7 +365,7 @@ module Kitchen
       # Returns the string command set the PSGallery as trusted, and
       # Install Pester from gallery based on the params from Pester_install_params config
       #
-      # @return <String> command to install Pester Module
+      # @return [String] command to install Pester Module
       # @api private
       def install_pester
         return if config[:skip_pester_install]
