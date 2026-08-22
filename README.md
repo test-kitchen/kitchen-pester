@@ -16,6 +16,11 @@ It works on Windows and on Linux or macOS instances with
 
 ### 1. Install the gem
 
+This verifier ships as part of [Cinc Workstation](https://cinc.sh/start/workstation/).
+If you have Cinc Workstation installed, there is nothing else to install.
+
+To install it into a standalone Ruby:
+
 ```bash
 gem install kitchen-pester
 ```
@@ -25,6 +30,9 @@ or add it to your `Gemfile`:
 ```ruby
 gem "kitchen-pester"
 ```
+
+The examples below use the `cinc` commands. Everything here works identically
+with Chef Workstation — see [Using with Chef](#using-with-chef).
 
 ### 2. Point Test Kitchen at it
 
@@ -69,11 +77,11 @@ Describe 'myapp' {
 ### 5. Run it
 
 ```bash
-kitchen verify
+cinc kitchen verify
 ```
 
 Results are written to `./testresults/PesterTestResults.xml` in NUnit format,
-ready for a CI system to pick up. A failing Pester test fails `kitchen verify`.
+ready for a CI system to pick up. A failing Pester test fails `cinc kitchen verify`.
 
 ## How it works
 
@@ -126,6 +134,8 @@ All of these go under `verifier:` in `kitchen.yml`.
 | `environment` | map | `{}` | Environment variables to set for your tests. |
 | `copy_folders` | array | `[]` | Local folders to copy to the instance and put on `$env:PSModulePath`. |
 | `pester_configuration` | map | see [below](#pester_configuration) | Passed through to Pester. |
+| `root_path` | string | driver default | Directory on the SUT the sandbox is copied into. Relative `copy_folders` sources and the `suites` directory resolve against it, and `PesterTestResults.xml` is written there. |
+| `suite_name` | string | the suite name | Name of the suite, used when locating its tests. |
 
 ### Installing Pester and its dependencies
 
@@ -347,9 +357,9 @@ Describe 'configuration' {
 
 ## Troubleshooting
 
-**`kitchen verify` fails but I get no results file.** You should still get one
+**`cinc kitchen verify` fails but I get no results file.** You should still get one
 — downloads run even when the verify fails. If the file is missing, the run
-died before Pester started; check the `kitchen verify` output for the install
+died before Pester started; check the `cinc kitchen verify` output for the install
 step.
 
 **I want to see the script that ran.** Add `kitchen_cmd.ps1` to `downloads`,
@@ -368,17 +378,23 @@ folder name.
 **PowerShell is not installed on a Linux instance.** kitchen-pester does not
 install it. Use a lifecycle hook or your provisioner.
 
+## Using with Chef
+
+This verifier runs Pester and does not depend on Cinc or Chef being installed on
+the system under test — it works with any Test Kitchen driver and provisioner.
+
+The examples above use [Cinc Workstation](https://cinc.sh/start/workstation/) and
+the `cinc kitchen` commands. With
+[Chef Workstation](https://www.chef.io/downloads/tools/workstation) run `kitchen`
+instead of `cinc kitchen`. No verifier configuration changes are needed.
+
 ## Contributing
 
-1. [Fork it](https://github.com/test-kitchen/kitchen-pester/fork)
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Make your change, with tests
-4. Commit (`git commit -am 'Add some feature'`)
-5. Push (`git push origin my-new-feature`)
-6. Open a pull request
-
-See [TESTING.md](TESTING.md) for how to run the unit specs and the integration
-suite.
+Bug reports and pull requests are welcome on
+[GitHub](https://github.com/test-kitchen/kitchen-pester). See
+[CONTRIBUTING.md](CONTRIBUTING.md) for development setup, how to run the unit
+specs, the PowerShell module specs, and the integration suite, and how the
+documentation is generated.
 
 ## License
 
