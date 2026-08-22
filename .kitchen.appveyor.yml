@@ -12,7 +12,7 @@ provisioner:
   script: provision.ps1
 
 platforms:
-- name: windows-2012R2
+  - name: windows-2012R2
 
 verifier:
   name: pester
