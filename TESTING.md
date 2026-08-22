@@ -29,6 +29,23 @@ To run a single file:
 bundle exec ruby -Ilib -Ispec spec/kitchen/verifier/pester_spec.rb
 ```
 
+## Documentation
+
+The public API is documented with [YARD](https://yardoc.org/). Every class,
+module, constant and method carries a docstring.
+
+```sh
+bundle exec rake docs:generate   # build the HTML into doc/
+bundle exec rake docs:coverage   # list anything that is undocumented
+bundle exec rake yard            # same as docs:generate, with a stats summary
+```
+
+`docs:coverage` is there when you want it; it is not wired into `rake quality`
+or CI.
+
+Options live in `.yardopts`, so a bare `yard` on the command line produces the
+same output as the rake task.
+
 ## Integration
 
 Integration testing runs `kitchen-pester` through `test-kitchen` itself.
