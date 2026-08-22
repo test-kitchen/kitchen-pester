@@ -120,7 +120,7 @@ All of these go under `verifier:` in `kitchen.yml`.
 ### Common
 
 | Option | Type | Default | What it does |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `test_folder` | string | `tests` | Where your tests live. See [Test discovery](#test-discovery). |
 | `downloads` | map | `{"./PesterTestResults.xml" => "./testresults/"}` | Files to copy back from the instance. See [Downloads](#downloads). |
 | `environment` | map | `{}` | Environment variables to set for your tests. |
@@ -130,7 +130,7 @@ All of these go under `verifier:` in `kitchen.yml`.
 ### Installing Pester and its dependencies
 
 | Option | Type | Default | What it does |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `pester_install` | map | `{SkipPublisherCheck: true, Force: true, ErrorAction: "Stop"}` | Splatted to `Install-Module -Name Pester`. |
 | `skip_pester_install` | bool | `false` | Use whatever Pester is already on the box. |
 | `install_modules` | array | `[]` | Extra modules to install from a gallery. |
@@ -142,7 +142,7 @@ All of these go under `verifier:` in `kitchen.yml`.
 ### Platform and shell
 
 | Option | Type | Default | What it does |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `shell` | string | `nil` | Shell binary to use. Defaults to `powershell` on Windows, `pwsh` elsewhere. |
 | `sudo` | bool | `false` | Run PowerShell under sudo. Non-Windows only. |
 | `restart_winrm` | bool | `false` | Restart WinRM via a scheduled task before verifying. Windows only. |
@@ -202,7 +202,7 @@ Output:
 leave them unset:
 
 | Key | Filled in with |
-|---|---|
+| --- | --- |
 | `Run.Path` | `$env:TEMP/verifier/suites` |
 | `TestResult.TestSuiteName` | `Pester - <kitchen instance name>` |
 | `TestResult.OutputPath` | `$env:TEMP/verifier/PesterTestResults.xml` |
@@ -211,7 +211,7 @@ leave them unset:
 the rest are ignored. These defaults apply unless you set them:
 
 | Parameter | Default |
-|---|---|
+| --- | --- |
 | `Script` | `$env:TEMP/verifier/suites` |
 | `OutputFile` | `$env:TEMP/verifier/PesterTestResults.xml` |
 | `OutputFormat` | `NUnitXml` |
