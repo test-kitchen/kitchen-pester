@@ -1,6 +1,6 @@
 gem "minitest"
 require "minitest/autorun"
-require "mocha/setup"
+require "mocha/minitest"
 
 require_relative "../../lib/kitchen/verifier/pester"
 

@@ -5,6 +5,7 @@ require "kitchen/verifier/pester_version"
 
 Gem::Specification.new do |spec|
   spec.name          = "kitchen-pester"
+  spec.required_ruby_version = ">= 3.1"
   spec.version       = Kitchen::Verifier::PESTER_VERSION
   spec.authors       = ["Steven Murawski"]
   spec.email         = ["steven.murawski@gmail.com"]
