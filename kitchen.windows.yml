@@ -20,6 +20,10 @@ platforms:
 
 verifier:
   name: pester
+  # The runner's built-in modules are fine; removing them (the default) leaves
+  # the session without Get-PSRepository and the Pester install then fails.
+  remove_builtin_pester: false
+  remove_builtin_powershellget: false
   environment:
     API_KEY: Some key value
     PUSH_REPO: https://push.example.com
