@@ -29,7 +29,7 @@ This can be a top-level declaration, a per-node declaration, or a per-suite decl
 ## Options
 
 * `restart_winrm` - boolean, default is `false`. (Windows only)
-Restarts the winrm service using a scheduled tasks before proceding.
+Restarts the winrm service using a scheduled tasks before proceeding.
 This setting is ignored on non-windows OSes.
 
 * `test_folder` - string, default is `./tests/integration/`.
@@ -142,7 +142,7 @@ Execute all PowerShell calls as sudo.
 This is necessary in certain cases, such as when `pwsh` is installed via `snap` and is only available via `sudo` unless you customise the system's configuration.
 
 * `downloads`- map[string, string], defaults to `{"./PesterTestResults.xml" => "./testresults}"`.
-Files to download from SUT to local system, used to download the pester results localy.
+Files to download from SUT to local system, used to download the pester results locally.
 The key is the remote file to download, while the value is the destination.
   * The source can:
     * Be relative to the verifier folder (by default `$TEMP/verifier`)
@@ -228,7 +228,7 @@ suites:
 ### Windows 2012 R2 default install
 
 If your image is a windows 2012 R2, you will be running on PowerShell v4.
-Assuming that's what you want, but you still need Pester v4 instead of the built-in 3.4.0, you will need to remove the built-in version, bootsrap the PowerShellGet version to a more recent one, and finally install Pester to your desired version.
+Assuming that's what you want, but you still need Pester v4 instead of the built-in 3.4.0, you will need to remove the built-in version, bootstrap the PowerShellGet version to a more recent one, and finally install Pester to your desired version.
 
 ```yaml
 verifier:

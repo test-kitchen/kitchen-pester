@@ -9,7 +9,7 @@
   - `bundle exec rake style`
 - [ ] Increment verifier version in `./lib/kitchen/verifier/pester_version.rb`
 - [ ] Generate changelog & add changelog and new version files
-  - Set enviroment variable `$env:CHANGELOG_GITHUB_TOKEN = $your_github_token`
+  - Set environment variable `$env:CHANGELOG_GITHUB_TOKEN = $your_github_token`
   - `bundle exec rake changelog`
 - [ ] Commit changes.
   - `git add ./CHANGELOG.md`
