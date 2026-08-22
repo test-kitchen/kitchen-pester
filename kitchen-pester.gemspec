@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
   spec.summary       = "Test-Kitchen verifier for Pester."
   spec.description   = "Skip all that Busser stuff and jump right into Pester."
   spec.homepage      = "https://github.com/test-kitchen/kitchen-pester"
-  spec.license       = "Apache-2.0"
+  spec.license       = "MIT"
 
   spec.files         = %w{LICENSE kitchen-pester.gemspec Gemfile Rakefile} + Dir.glob("lib/**/*")
   spec.require_paths = ["lib"]
