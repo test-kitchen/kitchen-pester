@@ -39,11 +39,18 @@ jobs:
           bundler-cache: true
 
       - name: Set up WinRM and the local test account
-        shell: cmd
+        shell: powershell
         run: |
-          winrm.cmd quickconfig -q
-          net user /add %MACHINE_USER% %MACHINE_PASS%
-          net localgroup administrators %MACHINE_USER% /add
+          winrm quickconfig -q
+          # Runners ship with basic/unencrypted WinRM disabled, and local
+          # admins are filtered over the network by default.
+          winrm set winrm/config/service/auth '@{Basic="true"}'
+          winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+          New-ItemProperty `
+            -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System `
+            -Name LocalAccountTokenFilterPolicy -Value 1 -PropertyType DWord -Force | Out-Null
+          net user /add $env:MACHINE_USER $env:MACHINE_PASS
+          net localgroup administrators $env:MACHINE_USER /add
 
       - name: Kitchen Verify
         run: bundle exec kitchen verify

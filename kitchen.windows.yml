@@ -4,6 +4,10 @@ driver:
   host: localhost
   reset_command: "exit 0"
   port: 5985
+
+# Credentials belong to the transport; the proxy driver only supplies the host.
+transport:
+  name: winrm
   username: <%= ENV["MACHINE_USER"] %>
   password: <%= ENV["MACHINE_PASS"] %>
 
