@@ -386,7 +386,7 @@ module Kitchen
       end
 
       # returns a piece of PS scriptblock for each Module to install
-      # from gallery that has been sepcified in install_modules config.
+      # from gallery that has been specified in install_modules config.
       #
       # @return [Array<String>] array of PS commands.
       # @api private
