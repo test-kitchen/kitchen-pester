@@ -1,0 +1,64 @@
+---
+name: "Windows Integration"
+
+"on":
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Kitchen Verify on Windows
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      # kitchen.windows.yml points the proxy driver at this account over WinRM
+      MACHINE_USER: test_user
+      MACHINE_PASS: Pass@word1
+      KITCHEN_YAML: kitchen.windows.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        ruby: ["3.1", "3.4", "4.0"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: true
+
+      - name: Set up WinRM and the local test account
+        shell: powershell
+        run: |
+          winrm quickconfig -q
+          # Runners ship with basic/unencrypted WinRM disabled, and local
+          # admins are filtered over the network by default.
+          winrm set winrm/config/service/auth '@{Basic="true"}'
+          winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+          New-ItemProperty `
+            -Path HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System `
+            -Name LocalAccountTokenFilterPolicy -Value 1 -PropertyType DWord -Force | Out-Null
+          net user /add $env:MACHINE_USER $env:MACHINE_PASS
+          net localgroup administrators $env:MACHINE_USER /add
+
+      - name: Kitchen Verify
+        run: bundle exec kitchen verify
+
+      - name: Upload Pester results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pester-results-ruby-${{ matrix.ruby }}
+          path: testresults/**/PesterTestResults.xml
+          if-no-files-found: ignore

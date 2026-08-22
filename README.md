@@ -1,7 +1,7 @@
+# Kitchen::Pester
+
 [![Build Status](https://dev.azure.com/test-kitchen/kitchen-pester/_apis/build/status/test-kitchen.kitchen-pester?branchName=main)](https://dev.azure.com/test-kitchen/kitchen-pester/_build/latest?definitionId=4&branchName=main)
 [![Gem Version](https://badge.fury.io/rb/kitchen-pester.svg)](http://badge.fury.io/rb/kitchen-pester)
-
-# Kitchen::Pester
 
 Execute [Pester](https://github.com/pester/Pester) tests, cross platform, right from Test-Kitchen, without having to transit the Busser layer.
 
@@ -10,20 +10,26 @@ For now, this gem hasn't been tested with Pester v5+.
 ## Usage
 
 Either
-```
+
+```bash
 gem install kitchen-pester
 ```
+
 or include
-```
+
+```ruby
 gem 'kitchen-pester'
 ```
+
 in your Gemfile.
 
 In your .kitchen.yml include
+
 ```yaml
 verifier:
   name: pester
 ```
+
 This can be a top-level declaration, a per-node declaration, or a per-suite declaration.
 
 ## Options
@@ -55,6 +61,7 @@ Note that it needs to be able to download the nupkg from `$galleryUrl/package/Po
 * `register_repository` - array (of maps), default is `[]`
 Allows you to register PSRepositories to download modules from. Useful when you want to use a private feed.
 This expects a map for each repository to register, the values will be splatted to `Register-PSRepository` (or `Set-PSRepository` if it already exists).
+
   ```yaml
     register_repository:
       - Name: MyPrivateNuget
@@ -66,6 +73,7 @@ This expects a map for each repository to register, the values will be splatted 
 * `install_modules` - array (of maps), default is `[]`
 Array of maps, that will be splatted to the Install-Module parameters.
 Useful for installing dependencies from a gallery.
+
   ```yaml
     install_modules:
       - Name: MyModule
@@ -77,6 +85,7 @@ Useful for installing dependencies from a gallery.
 Folders (relative to the current directory or absolute) to copy to the System Under Test (SUT).
 The SUT's `$env:PSModulePath` will have the parent folder prepended for the session.
 If you are testing a PowerShell module you have built as part of your build process, this enables you to copy the module folder directly to the target machine.
+
   ```yaml
   verifier:
     name: pester
@@ -91,6 +100,7 @@ Skip installing pester and just use what's available on the box, or what you hav
 
 
 * `pester_install` - map, default is
+
   ```ruby
   {
     SkipPublisherCheck: true,
@@ -98,11 +108,13 @@ Skip installing pester and just use what's available on the box, or what you hav
     ErrorAction: "Stop",
   }
   ```
+
 Specify parameters for installing Pester before running the tests.
 The map will be splatted to the `Install-Module -Name Pester` command.
 You can use this to install the module from a private gallery, for instance.
 
 * `pester_configuration` - hash, defaults to
+
   ```ruby
   {
     run: {
@@ -161,6 +173,7 @@ The key is the remote file to download, while the value is the destination.
 
 * `environment` - map[string, string], defaults to `{}`.
 Environment variables to set in SUT for your pester tests to access.
+
   ```yaml
   environment:
       API_KEY: api-key-here
@@ -176,6 +189,7 @@ Environment variables to set in SUT for your pester tests to access.
 If you're testing on a default image of Windows Server 2019, you probably need to replace the builtin Pester module (v3.4.0), and replace the builtin PackageManagement and PowerShellGet to a more recent for the install to work.
 
 Assuming your tests are written for Peter v4, here's a sample configuration:
+
 ```yaml
 verifier:
   name: pester
