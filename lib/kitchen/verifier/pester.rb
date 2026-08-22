@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # Author:: Steven Murawski (<steven.murawski@gmail.com>)
 #
 # Copyright (c) 2015 Steven Murawski
@@ -482,6 +484,13 @@ module Kitchen
           end
         end
       end
+
+      # Note for anyone adding to the script builders below: Kitchen::Util.outdent!
+      # mutates the string it is handed, and this file sets
+      # `frozen_string_literal: true`. Interpolated literals are not frozen, so
+      # every heredoc that reaches outdent! today is fine -- but a heredoc with
+      # no `#{}` in it would be frozen and would raise FrozenError at runtime.
+      # Use +dup+ on any such string before passing it along.
 
       # Wraps generated PowerShell in the platform's shell invocation.
       #
