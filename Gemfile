@@ -15,8 +15,8 @@ group :changelog do
 end
 
 group :debug do
-  gem "pry", "~>0.16.0"
-  gem "pry-byebug", "~>3.12.0"
+  gem "pry"
+  gem "pry-byebug"
   gem "pry-stack_explorer"
 end
 
@@ -26,4 +26,8 @@ end
 
 group :cookstyle do
   gem "cookstyle"
+end
+
+group :test do
+  gem "rake"
 end
