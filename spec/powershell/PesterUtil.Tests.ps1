@@ -110,12 +110,20 @@ Describe 'Set-PSRepo' {
             }
         }
 
+        # The *-PackageSource cmdlets have several parameter sets, and Name
+        # alone does not select one -- ProviderName does. A real
+        # register_repository entry carries it too, as the README example
+        # shows, so these use a PackageSource-shaped definition.
         It 'falls back to Set-PackageSource for a source that exists' {
             Mock -ModuleName PesterUtil Get-PackageSource { @{ Name = 'Internal' } }
             Mock -ModuleName PesterUtil Set-PackageSource { }
             Mock -ModuleName PesterUtil Register-PackageSource { }
 
-            Set-PSRepo -Repository @{ Name = 'Internal' }
+            Set-PSRepo -Repository @{
+                Name         = 'Internal'
+                Location     = 'https://proget.example/nuget'
+                ProviderName = 'NuGet'
+            }
 
             Should -ModuleName PesterUtil -Invoke Set-PackageSource -Times 1 -Exactly
             Should -ModuleName PesterUtil -Invoke Register-PackageSource -Times 0 -Exactly
@@ -126,7 +134,11 @@ Describe 'Set-PSRepo' {
             Mock -ModuleName PesterUtil Set-PackageSource { }
             Mock -ModuleName PesterUtil Register-PackageSource { }
 
-            Set-PSRepo -Repository @{ Name = 'Internal' }
+            Set-PSRepo -Repository @{
+                Name         = 'Internal'
+                Location     = 'https://proget.example/nuget'
+                ProviderName = 'NuGet'
+            }
 
             Should -ModuleName PesterUtil -Invoke Register-PackageSource -Times 1 -Exactly
             Should -ModuleName PesterUtil -Invoke Set-PackageSource -Times 0 -Exactly
