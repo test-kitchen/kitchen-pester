@@ -26,6 +26,29 @@ module Kitchen
 
   module Verifier
 
+    # A Test Kitchen verifier that runs Pester tests on the system under test.
+    #
+    # The verifier does almost all of its work by generating PowerShell source
+    # locally and handing it to the transport to execute remotely. Each command
+    # hook -- {#install_command}, {#init_command}, {#prepare_command} and
+    # {#run_command} -- returns a script string rather than performing the work
+    # itself.
+    #
+    # Test files, helper files and any folders named in `copy_folders` are
+    # staged into a sandbox by {#create_sandbox}, shipped to the instance, and
+    # discovered there through `$Env:PSModulePath`.
+    #
+    # @example configuring the verifier in kitchen.yml
+    #
+    #   verifier:
+    #     name: pester
+    #     test_folder: tests
+    #     install_modules:
+    #       - PSScriptAnalyzer
+    #     downloads:
+    #       ./PesterTestResults.xml: ./testresults/
+    #
+    # @see https://pester.dev/ Pester
     class Pester < Kitchen::Verifier::Base
 
       kitchen_verifier_api_version 1
@@ -95,6 +118,8 @@ module Kitchen
       #       # any further file copies, preparations, etc.
       #     end
       #   end
+      #
+      # @return [void]
       def create_sandbox
         super
         prepare_supporting_psmodules
@@ -217,8 +242,17 @@ module Kitchen
       end
 
       # Download functionality was added to the base verifier behavior after
-      # version 2.3.4
+      # version 2.3.4. On older releases the base verifier never retrieves the
+      # results, so this class does it in an `ensure` block; on newer ones the
+      # base class handles the success path and only failures need handling
+      # here.
       if Gem::Version.new(Kitchen::VERSION) <= Gem::Version.new("2.3.4")
+        # Runs the verifier on the instance, always retrieving the test
+        # results afterwards.
+        #
+        # @param state [Hash] mutable instance state
+        # @raise [Kitchen::ActionFailed] if the verification failed
+        # @return [void]
         def call(state)
           super
         ensure
@@ -227,6 +261,12 @@ module Kitchen
           info("Download complete.")
         end
       else
+        # Runs the verifier on the instance, retrieving the test results even
+        # when the run fails.
+        #
+        # @param state [Hash] mutable instance state
+        # @raise [Kitchen::ActionFailed] if the verification failed
+        # @return [void]
         def call(state)
           super
         rescue
@@ -239,7 +279,15 @@ module Kitchen
         end
       end
 
-      # private
+      # Returns the PowerShell that imports Pester and invokes it.
+      #
+      # Two dialects are emitted behind a version check evaluated on the SUT:
+      # Pester 4 and earlier take loose parameters, Pester 5 and later take a
+      # `PesterConfiguration` object. The script exits with Pester's failed
+      # test count so the transport registers the failure.
+      #
+      # @return [String] a PowerShell script
+      # @api private
       def invoke_pester_scriptblock
         <<-PS1
           $PesterModule = Import-Module -Name Pester -Force -ErrorAction Stop -PassThru
@@ -322,6 +370,17 @@ module Kitchen
         PS1
       end
 
+      # Returns the commands that install the bootstrap modules straight from
+      # a NuGet feed.
+      #
+      # This runs before PowerShellGet is available, so it uses
+      # `Install-ModuleFromNuget` from PesterUtil.psm1 rather than
+      # `Install-Module`. Each entry of `bootstrap.modules` may be a plain
+      # module name or a hash of parameters.
+      #
+      # @return [Array<String>, nil] one PowerShell fragment per module, or nil
+      #   when no bootstrap modules are configured
+      # @api private
       def get_powershell_modules_from_nugetapi
         # don't return anything is the modules subkey or bootstrap is null
         return if config.dig(:bootstrap, :modules).nil?
@@ -418,13 +477,24 @@ module Kitchen
         end
       end
 
+      # Wraps generated PowerShell in the platform's shell invocation.
+      #
+      # @param code [String] the PowerShell to run on the instance
+      # @return [String] a shell command string
+      # @api private
       def really_wrap_shell_code(code)
         windows_os? ? really_wrap_windows_shell_code(code) : really_wrap_posix_shell_code(code)
       end
 
-      # Get the defined shell or fall back to pwsh, unless we're on windows where we use powershell
-      # call via sudo if sudo is true.
-      # This allows to use pwsh-preview instead of pwsh, or a full path to a specific binary.
+      # Returns the shell binary used to run the generated script.
+      #
+      # An explicit `shell` config wins, which allows pwsh-preview or a full
+      # path to a specific binary. Otherwise Windows uses powershell and every
+      # other platform uses pwsh. `sudo` is honoured everywhere except the
+      # Windows branch, where it is meaningless.
+      #
+      # @return [String] the shell command, prefixed with sudo when configured
+      # @api private
       def shell_cmd
         if !config[:shell].nil?
           config[:sudo] ? "sudo #{config[:shell]}" : "#{config[:shell]}"
@@ -435,6 +505,15 @@ module Kitchen
         end
       end
 
+      # Wraps PowerShell for a Windows instance.
+      #
+      # The payload is written to kitchen_cmd.ps1 and invoked, rather than
+      # passed on the command line, so that quoting and length limits do not
+      # apply to it.
+      #
+      # @param code [String] the PowerShell to run on the instance
+      # @return [String] a shell command string
+      # @api private
       def really_wrap_windows_shell_code(code)
         my_command = <<-PWSH
           echo "Running as '$(whoami)'..."
@@ -460,8 +539,15 @@ module Kitchen
         wrap_shell_code(Util.outdent!(my_command))
       end
 
-      # Writing the command to a ps1 file, adding the pwsh shebang
-      # invoke the file
+      # Wraps PowerShell for a non-Windows instance.
+      #
+      # Writes the payload to kitchen_cmd.ps1 through a quoted heredoc, so the
+      # POSIX shell does not interpolate PowerShell variables, adds a pwsh
+      # shebang and invokes it.
+      #
+      # @param code [String] the PowerShell to run on the instance
+      # @return [String] a shell command string
+      # @api private
       def really_wrap_posix_shell_code(code)
         my_command = <<-BASH
           echo "Running as '$(whoami)'"
@@ -482,6 +568,12 @@ module Kitchen
         Util.outdent!(my_command)
       end
 
+      # Prefixes a script with the preamble that makes the sandbox's modules
+      # folder importable.
+      #
+      # @param script [String] the PowerShell to run after the preamble
+      # @return [String] the script with the PSModulePath preamble prepended
+      # @api private
       def use_local_powershell_modules(script)
         <<-PS1
           Write-Host -Object ("{0} - PowerShell {1}" -f $PSVersionTable.OS,$PSVersionTable.PSVersion)
@@ -501,6 +593,16 @@ module Kitchen
         PS1
       end
 
+      # Returns the PowerShell that prepares the SUT once the sandbox has been
+      # transferred.
+      #
+      # Runs after the transfer so that PesterUtil.psm1 is available to import.
+      # Composes, in order: the NuGet bootstrap, any PSRepository registration,
+      # the Pester install, and any gallery modules. Each section is omitted
+      # when its config is nil.
+      #
+      # @return [String] a PowerShell script
+      # @api private
       def install_command_script
         <<-PS1
           $PSModPathToPrepend = "#{config[:root_path]}"
@@ -517,6 +619,14 @@ module Kitchen
         PS1
       end
 
+      # Returns the command that schedules and runs a WinRM restart.
+      #
+      # The restart is driven through a scheduled task so that it survives the
+      # WinRM session being torn down by the restart itself.
+      #
+      # @return [String, nil] a shell command string, or nil on a non-Windows
+      #   instance
+      # @api private
       def restart_winrm_service
         return unless windows_os?
 
@@ -530,6 +640,12 @@ module Kitchen
                                      ))
       end
 
+      # Retrieves the configured result files from the instance.
+      #
+      # @param state [Hash] mutable instance state, used to open the transport
+      #   connection
+      # @return [void]
+      # @api private
       def download_test_files(state)
         if config[:downloads].nil?
           info("Skipped downloading test result file from #{instance.to_str}; 'downloads' hash is empty.")
@@ -585,8 +701,9 @@ module Kitchen
       end
 
       # Copies all common testing helper files into the suites directory in
-      # the sandbox.
+      # the sandbox, stripping the `helpers/` prefix from their paths.
       #
+      # @return [void]
       # @api private
       def prepare_helpers
         base = File.join(test_folder, "helpers")
@@ -599,9 +716,15 @@ module Kitchen
         end
       end
 
-      # Creates a PowerShell hashtable from a ruby map.
-      # The only types supported for now are hash, array, string and Boolean.
+      # Renders a Ruby value as PowerShell source.
       #
+      # Hashes become hashtables, arrays become arrays, booleans become $true
+      # or $false, and everything else is quoted as a string -- PowerShell is
+      # generally able to coerce it back to the type it needs.
+      #
+      # @param obj [Object] the value to render
+      # @param depth [Integer] current nesting depth, used for indentation
+      # @return [String] PowerShell source for the value
       # @api private
       def ps_hash(obj, depth = 0)
         if [true, false].include? obj
@@ -627,6 +750,8 @@ module Kitchen
 
       # Creates environment variable assignments from a ruby map.
       #
+      # @param obj [Hash] variable names mapped to their values
+      # @return [String] newline-separated `$env:NAME = 'value'` assignments
       # @api private
       def ps_environment(obj)
         commands = obj.map do |k, v|
@@ -650,17 +775,20 @@ module Kitchen
         "'#{value.to_s.gsub("'", "''")}'"
       end
 
-      # returns the path of the modules subfolder
-      # in the sandbox, where PS Modules and folders will be copied to.
+      # Returns the path of the modules subfolder in the sandbox, where PS
+      # modules and folders will be copied to.
       #
+      # @return [String] absolute path to the sandbox's modules folder
       # @api private
       def sandbox_module_path
         File.join(sandbox_path, "modules")
       end
 
-      # copy files into the 'modules' folder of the sandbox,
-      # so that copied folders can be discovered with the updated $Env:PSModulePath.
+      # Copies the folders named in `copy_folders` into the sandbox's modules
+      # folder, so they can be discovered through the updated
+      # $Env:PSModulePath.
       #
+      # @return [void]
       # @api private
       def prepare_copy_folders
         return if config[:copy_folders].nil?
@@ -674,12 +802,13 @@ module Kitchen
         end
       end
 
-      # returns an array of string
-      # Creates a flat list of files contained in a folder.
-      # This is useful when trying to debug what has been copied to
-      # the sandbox.
+      # Creates a flat list of the files contained in a folder.
       #
-      # @return [Array<String>] array of files in a folder
+      # Useful when debugging what has actually been copied to the sandbox.
+      #
+      # @param path [String] the folder to list
+      # @return [Array<String>] paths of the entries at the top level and
+      #   nested beneath it
       # @api private
       def list_files(path)
         base_directory_content = Dir.glob(File.join(path, "*"))
@@ -689,6 +818,7 @@ module Kitchen
 
       # Copies all test suite files into the suites directory in the sandbox.
       #
+      # @return [void]
       # @api private
       def prepare_pester_tests
         info("Preparing to copy files from  '#{suite_test_folder}' to the SUT.")
@@ -696,15 +826,23 @@ module Kitchen
         copy_if_src_exists(suite_test_folder, sandboxed_suites_path)
       end
 
+      # Copies PesterUtil.psm1 into the sandbox's modules folder, where the
+      # updated $Env:PSModulePath will find it.
+      #
+      # @return [void]
+      # @api private
       def prepare_supporting_psmodules
         info("Preparing to copy files from '#{support_psmodule_folder}' to the SUT.")
         sandbox_module_path = File.join(sandbox_path, "modules")
         copy_if_src_exists(support_psmodule_folder, sandbox_module_path)
       end
 
-      # Copies a folder recursively preserving its layers,
-      # mostly used to copy to the sandbox.
+      # Copies a folder recursively, preserving its layers. Mostly used to
+      # copy into the sandbox. Does nothing when the source does not exist.
       #
+      # @param src_to_validate [String] folder to copy
+      # @param destination [String] folder to copy into, created if missing
+      # @return [void]
       # @api private
       def copy_if_src_exists(src_to_validate, destination)
         unless Dir.exist?(src_to_validate)
@@ -721,17 +859,19 @@ module Kitchen
         FileUtils.cp_r(src_to_validate, destination, preserve: true)
       end
 
-      # returns the absolute path of the folders containing the
-      # test suites, use default if not set.
+      # Returns the folder containing the test suites, falling back to
+      # `test_base_path` when `test_folder` is not set.
       #
+      # @return [String] path to the folder holding the suites
       # @api private
       def test_folder
         config[:test_folder].nil? ? config[:test_base_path] : absolute_test_folder
       end
 
-      # returns the absolute path of the relative folders containing the
-      # test suites, use default i not set.
+      # Resolves `test_folder` to an absolute path, descending into an
+      # `integration` subfolder when one exists.
       #
+      # @return [String] absolute path to the folder holding the suites
       # @api private
       def absolute_test_folder
         path = (Pathname.new config[:test_folder]).realpath
@@ -753,9 +893,11 @@ module Kitchen
         path.to_s.split(%r{[\\/]}).last.to_s
       end
 
-      # returns a string of space of the specified depth.
-      # This is used to pad messages or when building PS hashtables.
+      # Returns a run of spaces of the given width, used to pad messages and
+      # indent generated PowerShell hashtables.
       #
+      # @param depth [Integer] number of spaces
+      # @return [String] the padding
       # @api private
       def pad(depth = 0)
         " " * depth
