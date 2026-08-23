@@ -1,10 +1,11 @@
 --markup markdown
 --output-dir doc
 --readme README.md
+--title "kitchen-pester"
 --protected
 --private
 lib/**/*.rb
 -
 CHANGELOG.md
-TESTING.md
+CONTRIBUTING.md
 LICENSE
