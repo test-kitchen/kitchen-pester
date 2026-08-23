@@ -1,0 +1,11 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "packages": {
+    ".": {
+      "release-type": "ruby",
+      "package-name": "kitchen-pester",
+      "version-file": "lib/kitchen/verifier/pester_version.rb",
+      "changelog-path": "CHANGELOG.md"
+    }
+  }
+}
