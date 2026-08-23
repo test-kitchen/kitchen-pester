@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/test-kitchen/kitchen-pester/compare/kitchen-pester-v1.2.0...kitchen-pester/v1.2.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* bump tk dep &lt;5 ([#111](https://github.com/test-kitchen/kitchen-pester/issues/111)) ([89565ef](https://github.com/test-kitchen/kitchen-pester/commit/89565efe7d961cf230276ca91a593ffd9396f856))
+
 ## [v1.2.0](https://github.com/test-kitchen/kitchen-pester/tree/v1.2.0) (2022-05-14)
 
 [Full Changelog](https://github.com/test-kitchen/kitchen-pester/compare/v1.1.1...v1.2.1)
