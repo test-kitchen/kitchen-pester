@@ -9,16 +9,13 @@ group :integration do
   gem "kitchen-chocolatey"
 end
 
-group :debug do
-  gem "pry"
-  gem "pry-byebug"
-  gem "pry-stack_explorer"
-end
-
 group :cookstyle do
   gem "cookstyle"
 end
 
 group :test do
   gem "rake"
+  gem "minitest", ">= 5.25", "< 7"
+  gem "mocha", ">= 2.0", "< 4"
+  gem "yard", "~> 0.9"
 end
