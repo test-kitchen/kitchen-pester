@@ -30,6 +30,6 @@ module Kitchen
     # test-kitchen, which is not yet available when the gemspec is evaluated.
     #
     # @return [String] the gem version
-    PESTER_VERSION = "1.2.1"
+    PESTER_VERSION = "1.2.2"
   end
 end
