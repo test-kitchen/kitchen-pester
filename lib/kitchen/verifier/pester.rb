@@ -221,7 +221,13 @@ module Kitchen
         config[:downloads] = config[:downloads]
           .map do |source, destination|
             source = source.to_s
-            destination = destination.gsub("%{instance_name}", instance.name)
+            if destination.nil?
+              raise UserError, "The verifier's 'downloads' entry for '#{source}' has no local " \
+                               "destination. Every entry needs one, for example " \
+                               "'#{source}: ./testresults/'."
+            end
+
+            destination = destination.to_s.gsub("%{instance_name}", instance.name)
             info("  resolving remote source's absolute path.")
             unless source.match?(%r{^/|^[a-zA-Z]:[\\/]}) # is Absolute?
               info("  '#{source}' is a relative path, resolving to: #{File.join(config[:root_path], source)}")
@@ -373,12 +379,13 @@ module Kitchen
         gallery_url_param = bootstrap[:repository_url] ? "-GalleryUrl '#{bootstrap[:repository_url]}'" : ""
 
         info("Bootstrapping environment without PowerShellGet Provider...")
-        Array(bootstrap[:modules]).map do |powershell_module|
+        config_list("bootstrap.modules", bootstrap[:modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
+            module_name = module_name!("bootstrap.modules", powershell_module)
             <<-PS1
-              ${#{powershell_module[:Name]}} = #{ps_hash(powershell_module)}
+              ${#{module_name}} = #{ps_hash(powershell_module)}
 
-              Install-ModuleFromNuget -Module ${#{powershell_module[:Name]}} #{gallery_url_param}
+              Install-ModuleFromNuget -Module ${#{module_name}} #{gallery_url_param}
             PS1
           else
             <<-PS1
@@ -397,13 +404,14 @@ module Kitchen
         return if config[:register_repository].nil?
 
         info("Registering a new PowerShellGet Repository")
-        Array(config[:register_repository]).map do |psrepo|
+        config_list("register_repository", config[:register_repository]).map do |psrepo|
+          repo_name = module_name!("register_repository", psrepo)
           # Using Set-PSRepo from ../../*/*/*/PesterUtil.psm1
-          debug("Command to set PSRepo #{psrepo[:Name]}.")
+          debug("Command to set PSRepo #{repo_name}.")
           <<-PS1
-            Write-Host 'Registering psrepo #{psrepo[:Name]}...'
-            ${#{psrepo[:Name]}} = #{ps_hash(psrepo)}
-            Set-PSRepo -Repository ${#{psrepo[:Name]}}
+            Write-Host 'Registering psrepo #{repo_name}...'
+            ${#{repo_name}} = #{ps_hash(psrepo)}
+            Set-PSRepo -Repository ${#{repo_name}}
           PS1
         end
       end
@@ -439,10 +447,10 @@ module Kitchen
       def install_modules_from_gallery
         return if config[:install_modules].nil?
 
-        Array(config[:install_modules]).map do |powershell_module|
+        config_list("install_modules", config[:install_modules]).map do |powershell_module|
           if powershell_module.is_a? Hash
             # Sanitize variable name so that $powershell-yaml becomes $powershell_yaml
-            module_name = powershell_module[:Name].gsub(/[\W]/, "_")
+            module_name = module_name!("install_modules", powershell_module).gsub(/[\W]/, "_")
             # so we can splat that variable to install module
             <<-PS1
               $#{module_name} = #{ps_hash(powershell_module)}
@@ -785,7 +793,7 @@ module Kitchen
 
         info("Preparing to copy specified folders to #{sandbox_module_path}.")
         kitchen_root_path = config[:kitchen_root]
-        config[:copy_folders].each do |folder|
+        config_list("copy_folders", config[:copy_folders]).each do |folder|
           debug("copying #{folder}")
           folder_to_copy = File.join(kitchen_root_path, folder)
           copy_if_src_exists(folder_to_copy, sandbox_module_path)
@@ -867,6 +875,61 @@ module Kitchen
         path = (Pathname.new config[:test_folder]).realpath
         integration_path = File.join(path, "integration")
         Dir.exist?(integration_path) ? integration_path : path.to_s
+      rescue Errno::ENOENT
+        raise UserError, "The verifier's 'test_folder' is set to " \
+                         "'#{config[:test_folder]}', which does not exist. It is resolved " \
+                         "relative to the directory kitchen runs in, so give it a path that " \
+                         "exists there or an absolute one."
+      end
+
+      # Returns the entries of a config option that is documented as a list.
+      #
+      # YAML makes it easy to write a single mapping where a list of mappings
+      # was meant -- leaving off the leading `- ` is enough. `Array()` turns
+      # such a mapping into a list of `[key, value]` pairs, which then renders
+      # as nonsense PowerShell instead of failing, so reject it here where we
+      # can still say which option is at fault.
+      #
+      # @param key [String] the option's name, for the error message
+      # @param value [Object] the configured value
+      # @return [Array] the entries to iterate over
+      # @raise [Kitchen::UserError] when a single mapping was given
+      # @api private
+      def config_list(key, value)
+        if value.is_a?(Hash)
+          raise UserError, "The verifier's '#{key}' must be a list, but a single mapping " \
+                           "was given. Put a '- ' in front of each entry in kitchen.yml."
+        end
+
+        Array(value)
+      end
+
+      # Returns the Name of a mapping-shaped entry in one of the module or
+      # repository lists.
+      #
+      # The name becomes a PowerShell variable that the generated script splats,
+      # so a missing one either blows up here or emits an empty `${}` that fails
+      # on the instance a long way from its cause.
+      #
+      # @param key [String] the option's name, for the error message
+      # @param entry [Hash] the entry to read the name from
+      # @return [String] the entry's Name
+      # @raise [Kitchen::UserError] when the entry is not a mapping, or has no
+      #   usable Name
+      # @api private
+      def module_name!(key, entry)
+        unless entry.is_a?(Hash)
+          raise UserError, "Every entry under the verifier's '#{key}' must be a mapping with " \
+                           "at least a 'Name'; #{entry.inspect} is a #{entry.class}."
+        end
+
+        name = entry[:Name] || entry["Name"]
+        if name.to_s.empty?
+          raise UserError, "Every mapping under the verifier's '#{key}' needs a 'Name'; " \
+                           "#{entry.inspect} has none."
+        end
+
+        name.to_s
       end
 
       # Returns the final segment of a path that lives on the SUT.
