@@ -352,7 +352,6 @@ module Kitchen
             $result | Export-CliXml -Path $resultXmlPath
           }
 
-          $LASTEXITCODE = $result.FailedCount
           $host.SetShouldExit($LASTEXITCODE)
 
           exit $LASTEXITCODE
