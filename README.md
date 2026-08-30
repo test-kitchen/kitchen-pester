@@ -105,25 +105,45 @@ the instance is the exact script that ran.
 
 ## Pester versions
 
-kitchen-pester supports **Pester 5** (the default) and **Pester 4**.
+kitchen-pester supports **Pester 5 and later** (the default) and **Pester 4**.
 
-It detects the installed version on the instance and adapts: Pester 5 gets a
-`PesterConfiguration` object built from your `pester_configuration`, Pester 4
-gets loose `Invoke-Pester` parameters. You do not need to tell it which one
-you are on.
+It detects the installed version on the instance and adapts: Pester 5 and
+later get a `PesterConfiguration` object built from your
+`pester_configuration`, Pester 4 and earlier get loose `Invoke-Pester`
+parameters. You do not need to tell it which one you are on.
 
-To stay on Pester 4, cap the install:
+To stay on Pester 4, cap the install. `pester_install` is
+[replaced, not merged](#map-options-are-replaced-not-merged), so repeat the
+defaults you still want — without `SkipPublisherCheck` the install fails
+against the Pester that ships with Windows:
 
 ```yaml
 verifier:
   name: pester
   pester_install:
     MaximumVersion: '4.99.999'
+    SkipPublisherCheck: true
+    Force: true
+    ErrorAction: Stop
 ```
 
 ## Configuration
 
 All of these go under `verifier:` in `kitchen.yml`.
+
+### Map options are replaced, not merged
+
+Every option below whose type is **map** — `pester_install`,
+`pester_configuration`, `bootstrap`, `environment`, `downloads` — replaces its
+default outright. A plugin default applies only when the key is absent
+altogether, so setting one key inside one of these maps discards every other
+key the default supplied. (Merging between the top-level, platform and suite
+`verifier:` blocks is unaffected — that part is a deep merge.)
+
+This bites hardest on `pester_install` and `pester_configuration`, where the
+discarded defaults are the ones that produce the results file. Whenever you set
+a map option, write out the whole map, taking the defaults from the tables
+below as your starting point.
 
 ### Common
 
@@ -207,6 +227,22 @@ Output:
   Verbosity: Detailed
 ```
 
+This map is [replaced, not merged](#map-options-are-replaced-not-merged), and
+the defaults it replaces are load-bearing. `New-PesterConfiguration` defaults
+both `TestResult.Enabled` and `Run.PassThru` to `$false`, so this:
+
+```yaml
+verifier:
+  name: pester
+  pester_configuration:
+    Output:
+      Verbosity: Diagnostic
+```
+
+turns off the NUnit results file — your `downloads` then have nothing to
+fetch — and leaves the run without a result object to count failures from.
+Copy the whole default map and edit the key you came for.
+
 **On Pester 5**, this becomes a `PesterConfiguration` via
 `New-PesterConfiguration -Hashtable`. Three keys are filled in for you if you
 leave them unset:
@@ -276,8 +312,9 @@ verifier:
       - PowerShellGet
 ```
 
-> **Note:** this key is replaced wholesale, not merged. If you set `modules`,
-> set `repository_url` too.
+> **Note:** this key is
+> [replaced, not merged](#map-options-are-replaced-not-merged). If you set
+> `modules`, set `repository_url` too.
 
 ## Examples
 
@@ -361,6 +398,11 @@ Describe 'configuration' {
 — downloads run even when the verify fails. If the file is missing, the run
 died before Pester started; check the `cinc kitchen verify` output for the install
 step.
+
+**I set one `pester_configuration` key and the results file stopped appearing.**
+Map options replace their default rather than merging into it, and the default
+is what enables the results file. See
+[Map options are replaced, not merged](#map-options-are-replaced-not-merged).
 
 **I want to see the script that ran.** Add `kitchen_cmd.ps1` to `downloads`,
 or look for it in `$env:TEMP/verifier` on the instance.
