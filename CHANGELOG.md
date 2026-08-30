@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/test-kitchen/kitchen-pester/compare/kitchen-pester/v1.2.1...kitchen-pester/v1.2.2) (2026-08-30)
+
+
+### Bug Fixes
+
+* fail with actionable errors on misconfigured verifier options ([#136](https://github.com/test-kitchen/kitchen-pester/issues/136)) ([43372d8](https://github.com/test-kitchen/kitchen-pester/commit/43372d8342fb8198df0f59f72c738af9bb652926))
+
 ## [1.2.1](https://github.com/test-kitchen/kitchen-pester/compare/kitchen-pester-v1.2.0...kitchen-pester/v1.2.1) (2026-08-23)
 
 ### Bug Fixes
