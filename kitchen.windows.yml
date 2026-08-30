@@ -16,7 +16,7 @@ provisioner:
   script: provision.ps1
 
 platforms:
-  - name: windows-latest
+  - name: windows
 
 verifier:
   name: pester
@@ -31,4 +31,17 @@ verifier:
     "PesterTestResults.xml": "testresults/%{instance_name}/"
 
 suites:
+  # Whatever Pester the gallery currently ships, which is 5.x. Exercises the
+  # New-PesterConfiguration branch of #invoke_pester_scriptblock.
   - name: default
+
+  # Pinned to Pester 4, which takes loose Invoke-Pester parameters instead.
+  # pester_install replaces the default hash rather than merging into it, so
+  # the defaults it would otherwise supply are repeated here.
+  - name: pester4
+    verifier:
+      pester_install:
+        MaximumVersion: "4.99.999"
+        SkipPublisherCheck: true
+        Force: true
+        ErrorAction: Stop

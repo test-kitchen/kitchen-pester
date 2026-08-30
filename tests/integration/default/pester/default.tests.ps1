@@ -1,4 +1,11 @@
 describe 'default' {
+  context 'Pester version' {
+    it 'ran under Pester 5, the version the gallery ships' {
+      $pester = Get-Module Pester | Sort-Object Version -Descending | Select-Object -First 1
+      $pester.Version.Major | Should -BeGreaterOrEqual 5
+    }
+  }
+
   context 'provisioning file' {
     it 'creates a test file' {
       "$env:Temp\test.txt" | should -Exist

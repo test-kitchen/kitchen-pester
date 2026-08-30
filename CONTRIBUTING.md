@@ -83,16 +83,37 @@ URL that `Install-ModuleFromNuget` builds.
 
 ### Integration
 
-Integration testing runs `kitchen-pester` through `test-kitchen` itself.
-`provision.ps1` prepares the environment, then the tests in
-`tests/integration/default/pester/default.tests.ps1` are run.
+Integration testing runs kitchen-pester through Test Kitchen itself, on a real
+Windows SUT. `kitchen.windows.yml` drives it: the proxy driver points at
+`localhost` over WinRM, `provision.ps1` prepares the environment, and the
+verifier runs the tests under `tests/integration/<suite>/`.
 
-1. Build the gem: `chef gem build ./kitchen-pester.gemspec`
-1. Install it: `chef gem install ./kitchen-pester-<version>.gem`
-1. Run it: `kitchen test`
-1. Confirm `PesterTestResults.xml` appears in `./testresults/default-windows-2016`
+There are two suites, because the verifier emits a different `Invoke-Pester`
+dialect depending on the version it finds on the SUT:
 
-CI runs this on `windows-latest` via `.github/workflows/integration.yml`.
+| Suite | Pester | Branch it covers |
+| --- | --- | --- |
+| `default` | whatever the gallery ships, currently 5.x | `New-PesterConfiguration` |
+| `pester4` | pinned with `pester_install.MaximumVersion` | loose `Invoke-Pester` parameters |
+
+To run it against your own Windows machine, set `MACHINE_USER` and
+`MACHINE_PASS` to an account that can log in over WinRM, then:
+
+```sh
+export KITCHEN_YAML=kitchen.windows.yml
+bundle exec kitchen verify default
+bundle exec kitchen verify pester4
+```
+
+Results land in `./testresults/<instance name>/PesterTestResults.xml`.
+
+The `pester4` suite only tests what it claims to if Pester 5 is not also
+installed machine-wide — `Import-Module Pester` takes the highest version it
+can see. CI deletes the runner's pre-installed copy first, and the suite's
+first assertion is that it really did run under Pester 4.
+
+`.github/workflows/integration.yml` runs both suites on Windows Server 2022 and
+2025, against the oldest and newest supported Ruby.
 
 ## Documentation
 

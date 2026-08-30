@@ -16,8 +16,8 @@ concurrency:
 
 jobs:
   windows:
-    name: Kitchen Verify on Windows
-    runs-on: windows-latest
+    name: ${{ matrix.suite }} on ${{ matrix.os }} (Ruby ${{ matrix.ruby }})
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     env:
       # kitchen.windows.yml points the proxy driver at this account over WinRM
@@ -27,7 +27,21 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ruby: ["3.1", "3.4", "4.0"]
+        # The verifier emits a different Invoke-Pester dialect for Pester 4
+        # than for Pester 5, chosen on the SUT from the installed version. Both
+        # suites run the same assertions; they differ only in the Pester they
+        # pin, so a regression in either branch shows up here.
+        suite:
+          - default
+          - pester4
+        os:
+          - windows-2022
+          - windows-2025
+        # The floor from the gemspec and the current release. The unit job in
+        # lint.yml covers the versions in between.
+        ruby:
+          - "3.1"
+          - "4.0"
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -52,13 +66,37 @@ jobs:
           net user /add $env:MACHINE_USER $env:MACHINE_PASS
           net localgroup administrators $env:MACHINE_USER /add
 
+      - name: Remove the runner's pre-installed Pester 5
+        # The verifier imports Pester by name, so whichever version is highest
+        # on PSModulePath is the one that runs. The runner image ships Pester 5
+        # machine-wide, which would win over the 4.x this suite installs and
+        # quietly test the wrong branch.
+        if: matrix.suite == 'pester4'
+        shell: powershell
+        run: |
+          Get-Module -ListAvailable Pester |
+            Where-Object { $_.Version.Major -ge 5 } |
+            ForEach-Object {
+              Write-Host "Removing Pester $($_.Version) from $($_.ModuleBase)"
+              Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $_.ModuleBase
+            }
+
+          $remaining = @(Get-Module -ListAvailable Pester | Where-Object { $_.Version.Major -ge 5 })
+          if ($remaining.Count -gt 0) {
+            throw "Pester $($remaining[0].Version) is still installed at $($remaining[0].ModuleBase); the Pester 4 suite would not test the Pester 4 branch."
+          }
+
+      - name: Report the Pester versions visible to the SUT
+        shell: powershell
+        run: Get-Module -ListAvailable Pester | Select-Object Name, Version, ModuleBase | Format-Table -AutoSize
+
       - name: Kitchen Verify
-        run: bundle exec kitchen verify
+        run: bundle exec kitchen verify ${{ matrix.suite }}
 
       - name: Upload Pester results
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: pester-results-ruby-${{ matrix.ruby }}
+          name: pester-results-${{ matrix.suite }}-${{ matrix.os }}-ruby-${{ matrix.ruby }}
           path: testresults/**/PesterTestResults.xml
           if-no-files-found: ignore
